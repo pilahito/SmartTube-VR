@@ -94,7 +94,12 @@ Se generan con [`tools/previews/RenderPreviews.java`](tools/previews/RenderPrevi
 **4. Ábrela.** En las Quest, ve a **Biblioteca → Apps → Orígenes desconocidos** y abre **SmartTube VR**.
 
 > ℹ️ Se instala como app propia (`app.smarttube.fdroid.vr`), así que **no sustituye** tu SmartTube normal.
-> ⚠️ Son compilaciones de prueba firmadas con una clave *debug*. Si al actualizar ves un error de firma, desinstala la versión anterior y vuelve a instalar. Antes de desinstalar, guarda tus ajustes con la copia de seguridad de SmartTube.
+> 🔄 **Actualizaciones**: a partir de esta versión, todas las compilaciones se firman con la **misma clave de SmartTube VR**, así que las nuevas versiones **se instalan encima** sin perder tus ajustes.
+> ⚠️ **Una única vez**: si vienes de una versión de prueba anterior, que estaba firmada con otra clave, **desinstálala antes** de instalar esta. Guarda antes tus ajustes con la copia de seguridad de SmartTube.
+>
+> Huella SHA-256 del certificado oficial, para comprobarla con `apksigner verify --print-certs`:
+> `0b0d0a877deb95d20ea099a10d34231bcc4068dbf3bf22b090cb959edb4860b0`
+> Las compilaciones hechas en *forks*, sin los secretos de firma, usan una clave *debug* temporal y no se instalan encima de las oficiales.
 
 ---
 
@@ -104,7 +109,7 @@ Este repositorio **no copia ni reimplementa YouTube ni SmartTube**. Solo contien
 1. GitHub Actions descarga el código oficial de [yuliskov/SmartTube](https://github.com/yuliskov/SmartTube), fijado en el commit `ffa16426`.
 2. Aplica los parches de [`patches/`](patches/).
 3. Compila la variante `stfdroidDebug`.
-4. Comprueba la firma, las librerías ARM64, el paquete `.vr`, el inicio y que no exija Leanback ni pantalla táctil.
+4. Firma con la clave estable de SmartTube VR, que se guarda en los secretos de GitHub Actions, y comprueba que la huella del certificado coincide. Revisa también las librerías ARM64, el paquete `.vr`, el inicio y que no exija Leanback ni pantalla táctil.
 
 | Parche | Qué hace |
 |---|---|

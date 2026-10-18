@@ -91,6 +91,36 @@ jobs:
         run: python3 enhancements/patches/smarttube_cinema.py --source smarttube
       - name: Add the SmartTube VR launcher home over the cinema scenery
         run: python3 enhancements/patches/smarttube_home.py --source smarttube
+      - name: Configure stable release signing (default debug key if secrets are missing)
+        id: signing
+        shell: bash
+        env:
+          KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$KEYSTORE_B64" || -z "$STORE_PASSWORD" || -z "$KEY_ALIAS" || -z "$KEY_PASSWORD" ]]; then
+            echo "::warning::Signing secrets are not available (fork or missing secrets). APKs are signed with this runner's default debug key and will NOT install over official SmartTube VR builds."
+            echo 'Signing: default debug key (secrets missing).' >> "$GITHUB_STEP_SUMMARY"
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          umask 077
+          KEYSTORE="$RUNNER_TEMP/smarttubevr-release.jks"
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$KEYSTORE"
+          # Upstream smarttubetv/build.gradle reads rootProject.file("keystore.properties")
+          # (keys storeFile, storePassword, keyAlias, keyPassword) and then signs debug and release with it.
+          {
+            printf 'storeFile=%s\n' "$KEYSTORE"
+            printf 'storePassword=%s\n' "$STORE_PASSWORD"
+            printf 'keyAlias=%s\n' "$KEY_ALIAS"
+            printf 'keyPassword=%s\n' "$KEY_PASSWORD"
+          } > smarttube/keystore.properties
+          keytool -list -keystore "$KEYSTORE" -storepass:env STORE_PASSWORD -alias "$KEY_ALIAS" > /dev/null
+          echo 'Signing: stable SmartTube VR release key.' >> "$GITHUB_STEP_SUMMARY"
+          echo "signed=true" >> "$GITHUB_OUTPUT"
       - name: Compile genuine SmartTube app source (F-Droid flavor, ARM64 included)
         working-directory: smarttube
         shell: bash
@@ -115,6 +145,44 @@ jobs:
               --report "$APK_DIR/validation-$variant.json"
           done
           echo 'APK signature, ARM64 libraries, VR home launcher and Quest feature checks passed.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Verify APK certificate matches the SmartTube VR release key
+        shell: bash
+        env:
+          SIGNED: ${{ steps.signing.outputs.signed }}
+          EXPECTED_SHA256: ${{ vars.SIGNING_CERT_SHA256 }}
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          APKSIGNER="$SDK_ROOT/build-tools/35.0.0/apksigner"
+          APK_DIR="smarttube/smarttubetv/build/outputs/apk/stfdroid/debug"
+          expected=$(printf '%s' "$EXPECTED_SHA256" | tr -d ': ' | tr 'A-F' 'a-f')
+          for apk in "$APK_DIR"/*.apk; do
+            digests=$("$APKSIGNER" verify --print-certs "$apk" | sed -n 's/^Signer #[0-9]* certificate SHA-256 digest: //p' | sort -u)
+            if [[ $(printf '%s\n' "$digests" | grep -c .) -ne 1 ]]; then
+              echo "::error::Expected exactly one signing certificate in $(basename "$apk")"
+              exit 1
+            fi
+            echo "$(basename "$apk"): certificate SHA-256 $digests"
+            if [[ "$SIGNED" == "true" ]]; then
+              if [[ -z "$expected" ]]; then
+                echo "::error::Repository variable SIGNING_CERT_SHA256 is not set"
+                exit 1
+              fi
+              if [[ "$digests" != "$expected" ]]; then
+                echo "::error::$(basename "$apk") is signed with $digests, expected $expected"
+                exit 1
+              fi
+            fi
+          done
+          if [[ "$SIGNED" == "true" ]]; then
+            echo "Release certificate verified: \`$expected\`" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::APKs use a temporary debug certificate; skipped release fingerprint check."
+          fi
+      - name: Remove signing material from the runner
+        if: always()
+        shell: bash
+        run: rm -f smarttube/keystore.properties "$RUNNER_TEMP/smarttubevr-release.jks"
       - name: Upload APK validation reports
         uses: actions/upload-artifact@v4
         with:
