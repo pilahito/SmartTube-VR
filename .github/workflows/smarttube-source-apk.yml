@@ -1,0 +1,137 @@
+name: SmartTube VR - Quest APK (patched original SmartTube)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  build-from-original:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - name: Checkout SmartTube VR patches
+        uses: actions/checkout@v4
+        with:
+          path: enhancements
+      - name: Checkout original SmartTube with all Git submodules
+        uses: actions/checkout@v4
+        with:
+          repository: yuliskov/SmartTube
+          ref: ffa16426ea3c7c82077e0f00228818b85f373588
+          submodules: recursive
+          path: smarttube
+          persist-credentials: false
+      - name: Install Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Confirm Android SDK and install required platforms
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          if [[ -z "$SDK_ROOT" || ! -d "$SDK_ROOT/cmdline-tools" ]]; then
+            echo "::error::Android command-line tools not found under ANDROID_HOME/ANDROID_SDK_ROOT"
+            exit 1
+          fi
+          SDK_CANDIDATES=$(find "$SDK_ROOT/cmdline-tools" -type f -path '*/bin/sdkmanager' | sort -Vr)
+          SDKMANAGER=""
+          while IFS= read -r candidate; do
+            if [[ -x "$candidate" ]]; then
+              SDKMANAGER="$candidate"
+              break
+            fi
+          done <<< "$SDK_CANDIDATES"
+          if [[ -z "$SDKMANAGER" ]]; then
+            echo "::error::No executable sdkmanager found in $SDK_ROOT/cmdline-tools"
+            exit 1
+          fi
+          echo "SDK manager: $SDKMANAGER"
+          "$SDKMANAGER" --version
+          set +e
+          yes | "$SDKMANAGER" --licenses
+          LICENSE_STATUS=("${PIPESTATUS[@]}")
+          set -e
+          if (( LICENSE_STATUS[1] != 0 )); then
+            echo "::error::sdkmanager --licenses failed with exit code ${LICENSE_STATUS[1]}"
+            exit "${LICENSE_STATUS[1]}"
+          fi
+          # yes may report a broken pipe after sdkmanager closes stdin.
+          # sdkmanager's exit status above is authoritative.
+          "$SDKMANAGER" 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Test packaged APK validation rules
+        run: python3 -m unittest discover -s enhancements/tests -v
+        env:
+          PYTHONPATH: enhancements
+      - name: Check scenery meshes, perspective and ECO budgets
+        shell: bash
+        run: |
+          mkdir -p /tmp/cinema-tests
+          javac -d /tmp/cinema-tests enhancements/patches/cinema/CinemaGeometry.java enhancements/tests/CinemaGeometryTest.java
+          java -cp /tmp/cinema-tests CinemaGeometryTest
+      - name: Check that the scenery preview renderer still builds against the real geometry
+        shell: bash
+        run: |
+          mkdir -p /tmp/previews
+          javac -d /tmp/previews enhancements/patches/cinema/CinemaGeometry.java enhancements/tools/previews/RenderPreviews.java
+          java -Djava.awt.headless=true -cp /tmp/previews RenderPreviews /tmp/previews/out
+      - name: Check VR home tile persistence, URL validation and ordering
+        shell: bash
+        run: |
+          mkdir -p /tmp/home-tests
+          javac -d /tmp/home-tests enhancements/patches/home/HomeTiles.java enhancements/tests/HomeTilesTest.java
+          java -cp /tmp/home-tests HomeTilesTest
+      - name: Apply SponsorBlock and DeArrow improvements to original
+        run: python3 enhancements/patches/smarttube_adstop.py --source smarttube
+      - name: Apply visual-only button changes
+        run: python3 enhancements/patches/smarttube_buttons_visual.py --source smarttube
+      - name: Integrate cinema scenery and controls into the original player
+        run: python3 enhancements/patches/smarttube_cinema.py --source smarttube
+      - name: Add the SmartTube VR launcher home over the cinema scenery
+        run: python3 enhancements/patches/smarttube_home.py --source smarttube
+      - name: Compile genuine SmartTube app source (F-Droid flavor, ARM64 included)
+        working-directory: smarttube
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew :smarttubetv:assembleStfdroidDebug --no-daemon --stacktrace
+      - name: Verify signed APKs and Quest installation requirements
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          APK_DIR="smarttube/smarttubetv/build/outputs/apk/stfdroid/debug"
+          shopt -s nullglob
+          for variant in arm64-v8a universal; do
+            apks=("$APK_DIR"/*_${variant}.apk)
+            if (( ${#apks[@]} != 1 )); then
+              echo "::error::Expected exactly one $variant APK; found ${#apks[@]}"
+              exit 1
+            fi
+            python3 enhancements/patches/verify_quest_apk.py \
+              --apk "${apks[0]}" --build-tools "$SDK_ROOT/build-tools/35.0.0" \
+              --report "$APK_DIR/validation-$variant.json"
+          done
+          echo 'APK signature, ARM64 libraries, VR home launcher and Quest feature checks passed.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload APK validation reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartTube-Quest-APK-validation
+          path: |
+            smarttube/smarttubetv/build/outputs/apk/stfdroid/debug/validation-*.json
+            smarttube/smarttubetv/build/outputs/apk/stfdroid/debug/*.apk.sha256
+          if-no-files-found: error
+      - name: Upload ARM64 Quest-compatible Android build
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartTube-VR-Quest-ARM64-debug
+          path: smarttube/smarttubetv/build/outputs/apk/stfdroid/debug/*_arm64-v8a.apk
+          if-no-files-found: error
+      - name: Upload universal APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartTube-VR-universal-debug
+          path: smarttube/smarttubetv/build/outputs/apk/stfdroid/debug/*_universal.apk
+          if-no-files-found: error
