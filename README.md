@@ -84,6 +84,13 @@ Se generan con [`tools/previews/RenderPreviews.java`](tools/previews/RenderPrevi
 <sub>*Diseños de muestra, no capturas de la app real.*</sub>
 
 La base sigue siendo **el código real de SmartTube completo**: sin anuncios, SponsorBlock, DeArrow, 4K, cuentas y suscripciones. Se adapta a **Meta Quest 3**, no a televisores:
+Todo lo de SmartTube y SmartTube VR se mantiene en Quest 3:
+- 🛡️ **SponsorBlock / AdStop** con los perfiles Equilibrado e Intensivo, con aviso al saltar y en la barra de controles del cine.
+- 🏷️ **DeArrow**: títulos y miniaturas sin *clickbait*, con un clic.
+- 🚫 Sin anuncios, calidad hasta 4K, cuentas, suscripciones, historial y búsqueda.
+- 🎬 Los 16 escenarios de cine y el inicio tipo launcher.
+
+Cambios para Quest 3:
 - **Sin interfaz de tele (Leanback)**: los menús pensados para el mando a distancia pasan a manejarse con el láser de los mandos de Quest y con las manos.
 - **Tamaño de gafas**: textos, botones y tarjetas más grandes y a la distancia correcta, en una ventana de panel redimensionable de Horizon OS.
 - **Integración con [NebulaVR](https://github.com/pilahito/NebularVR-Quest)**: se abre desde la tarjeta de SmartTube VR del launcher, toma el tema de colores elegido (playa de día, noche morada, atardecer o bosque esmeralda) y puede verse en la pantalla de cine de [SmartTube-VR-3D](https://github.com/pilahito/SmartTube-VR-3D).
