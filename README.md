@@ -72,6 +72,17 @@ Se generan con [`tools/previews/RenderPreviews.java`](tools/previews/RenderPrevi
 
 ---
 
+## 🚀 Lo próximo: SmartTube VR para Meta Quest 3 y NebulaVR
+> 🛠️ **En desarrollo.** Esto todavía no está en la versión publicada.
+
+La base sigue siendo **el código real de SmartTube completo**: sin anuncios, SponsorBlock, DeArrow, 4K, cuentas y suscripciones. Se adapta a **Meta Quest 3**, no a televisores:
+- **Sin interfaz de tele (Leanback)**: los menús pensados para el mando a distancia pasan a manejarse con el láser de los mandos de Quest y con las manos.
+- **Tamaño de gafas**: textos, botones y tarjetas más grandes y a la distancia correcta, en una ventana de panel redimensionable de Horizon OS.
+- **Integración con [NebulaVR](https://github.com/pilahito/NebularVR-Quest)**: se abre desde la tarjeta de SmartTube VR del launcher, toma el tema de colores elegido (playa de día, noche morada, atardecer o bosque esmeralda) y puede verse en la pantalla de cine de [SmartTube-VR-3D](https://github.com/pilahito/SmartTube-VR-3D).
+- **Actualización sin perder datos**: se seguirá firmando con la misma clave, así que se instala encima.
+
+---
+
 ## 📥 Instalar en Meta Quest
 
 **1. Descarga el APK.** En [Releases](https://github.com/pilahito/SmartTube-VR/releases), baja el archivo que termina en **`arm64-v8a.apk`**. El universal vale para otros Android.
