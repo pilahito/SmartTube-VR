@@ -95,6 +95,8 @@ Sigue siendo **el SmartTube real y completo** (sin anuncios, cuentas, suscripcio
 - **SponsorBlock**: los patrocinios se marcan en **amarillo** en la barra, y cuando se salta un tramo aparece un botón **Deshacer salto** durante 5 segundos.
 - **DeArrow** activado de serie: títulos y miniaturas sin *clickbait*.
 - **ReturnYouTubeDislike**: vuelve a mostrar los "no me gusta".
+- **Comentarios** en un panel lateral junto al vídeo, con las respuestas, sin tener que parar la reproducción.
+- **Información del vídeo**: título, canal (con botón de suscribirse), visitas, fecha, "me gusta" y "no me gusta", descripción con enlaces, y **capítulos** para saltar directo a cada parte.
 
 ### 🖥️ Pantalla virtual a tu gusto
 - **Forma**: plana o curva, con la curvatura que quieras.
