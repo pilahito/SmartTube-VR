@@ -5,10 +5,15 @@ on:
     branches: [main]
 permissions:
   contents: read
+concurrency:
+  group: smarttube-vr-release-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
   build-from-original:
     runs-on: ubuntu-latest
     timeout-minutes: 50
+    permissions:
+      contents: write
     steps:
       - name: Checkout SmartTube VR patches
         uses: actions/checkout@v4
@@ -95,6 +100,8 @@ jobs:
         run: python3 enhancements/patches/smarttube_home.py --source smarttube
       - name: Replace the launcher icon and banner with the SmartTube VR ones
         run: python3 enhancements/patches/smarttube_icon.py --source smarttube
+      - name: Point the built-in updater at SmartTube VR releases and bump versionCode
+        run: python3 enhancements/patches/smarttube_updater.py --source smarttube --run-number "${{ github.run_number }}"
       - name: Configure stable release signing (default debug key if secrets are missing)
         id: signing
         shell: bash
@@ -207,3 +214,31 @@ jobs:
           name: SmartTube-VR-universal-debug
           path: smarttube/smarttubetv/build/outputs/apk/stfdroid/debug/*_universal.apk
           if-no-files-found: error
+      - name: Publish GitHub Release with the APKs and the update manifest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.signing.outputs.signed == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          APK_DIR="smarttube/smarttubetv/build/outputs/apk/stfdroid/debug"
+          OUT="$RUNNER_TEMP/release"
+          mkdir -p "$OUT"
+          cp "$APK_DIR"/*_arm64-v8a.apk "$OUT/SmartTubeVR_arm64-v8a.apk"
+          cp "$APK_DIR"/*_universal.apk "$OUT/SmartTubeVR_universal.apk"
+          NAME=$(grep -m1 -oP 'versionName "\K[^"]+' smarttube/smarttubetv/build.gradle)
+          TAG="vr-$RUN"
+          SUBJECT=$(git -C enhancements log -1 --format=%s)
+          python3 enhancements/patches/smarttube_updater.py --run-number "$RUN" \
+            --write-manifest "$OUT/smarttube_vr.json" --version-name "$NAME" --tag "$TAG" \
+            --changelog "$SUBJECT"
+          (cd "$OUT" && sha256sum *.apk > SHA256SUMS.txt)
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber "$OUT"/*
+          else
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "SmartTube VR $NAME" --notes "Compilación automática $NAME ($SUBJECT)." \
+              --latest "$OUT"/*
+          fi
+          echo "Release publicada: $TAG ($NAME)" >> "$GITHUB_STEP_SUMMARY"
