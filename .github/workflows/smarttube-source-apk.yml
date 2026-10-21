@@ -91,6 +91,8 @@ jobs:
         run: python3 enhancements/patches/smarttube_cinema.py --source smarttube
       - name: Add the SmartTube VR launcher home over the cinema scenery
         run: python3 enhancements/patches/smarttube_home.py --source smarttube
+      - name: Replace the launcher icon and banner with the SmartTube VR ones
+        run: python3 enhancements/patches/smarttube_icon.py --source smarttube
       - name: Configure stable release signing (default debug key if secrets are missing)
         id: signing
         shell: bash
