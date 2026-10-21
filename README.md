@@ -82,7 +82,8 @@ Se generan con [`tools/previews/RenderPreviews.java`](tools/previews/RenderPrevi
 ## 🚀 Lo próximo: SmartTube VR para Meta Quest 3 y NebulaVR
 > 🛠️ **En desarrollo.** Esto todavía no está en la versión publicada.
 
-La base sigue siendo **el código real de SmartTube completo**: sin anuncios, SponsorBlock, DeArrow, 4K, cuentas y suscripciones. Se adapta a **Meta Quest 3**, no a televisores:
+La base sigue siendo **el código real de SmartTube completo**: sin anuncios, SponsorBlock, DeArrow, 4K, cuentas y suscripciones. Se adapta a **Meta Quest 3**, no a televisores.
+
 Todo lo de SmartTube y SmartTube VR se mantiene en Quest 3:
 - 🛡️ **SponsorBlock / AdStop** con los perfiles Equilibrado e Intensivo, con aviso al saltar y en la barra de controles del cine.
 - 🏷️ **DeArrow**: títulos y miniaturas sin *clickbait*, con un clic.
