@@ -98,6 +98,8 @@ Sigue siendo **el SmartTube real y completo** (sin anuncios, cuentas, suscripcio
 - **Comentarios** en un panel lateral junto al vídeo, con las respuestas, sin tener que parar la reproducción.
 - **Información del vídeo**: título, canal (con botón de suscribirse), visitas, fecha, "me gusta" y "no me gusta", descripción con enlaces, y **capítulos** para saltar directo a cada parte.
 
+![Información del vídeo y comentarios](docs/interfaz/info-comentarios.jpg)
+
 ### 🖥️ Pantalla virtual a tu gusto
 - **Forma**: plana o curva, con la curvatura que quieras.
 - **Formato**: 16:9, 21:9, 32:9, 4:3 o Ajustar al vídeo.
