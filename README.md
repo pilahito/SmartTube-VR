@@ -4,7 +4,7 @@
 
 **YouTube sin anuncios en tus Meta Quest, dentro de un cine virtual.**
 
-SmartTube original de siempre, con SponsorBlock y DeArrow, un inicio tipo *launcher* y 16 escenarios alrededor del vídeo. Todo se maneja con el mando.
+SmartTube original de siempre, con SponsorBlock y DeArrow, un inicio tipo *launcher* y 16 escenarios alrededor del vídeo. Todo se maneja con el mando, y pronto también con las manos.
 
 [![Compilación](https://github.com/pilahito/SmartTube-VR/actions/workflows/smarttube-source-apk.yml/badge.svg)](https://github.com/pilahito/SmartTube-VR/actions/workflows/smarttube-source-apk.yml)
 ![Meta Quest](https://img.shields.io/badge/Meta%20Quest-APK%20arm64-1c1e20)
@@ -79,18 +79,24 @@ Se generan con [`tools/previews/RenderPreviews.java`](tools/previews/RenderPrevi
 
 ---
 
-## 🚀 Lo próximo: SmartTube VR para Meta Quest 3 y NebulaVR
-> 🛠️ **En desarrollo.** Esto todavía no está en la versión publicada.
+## 🚀 Lo próximo: versión para Meta Quest 3 y NebulaVR
+> 🛠️ **En desarrollo.** Nada de esta sección está todavía en la versión publicada. Las imágenes de arriba muestran cómo se verá.
 
-La base sigue siendo **el código real de SmartTube completo**: sin anuncios, SponsorBlock, DeArrow, 4K, cuentas y suscripciones. Se adapta a **Meta Quest 3**, no a televisores.
+Sigue siendo **el SmartTube real y completo** (sin anuncios, cuentas, suscripciones, historial y búsqueda), pero pensado para las gafas y no para la tele.
 
-Todo lo de SmartTube y SmartTube VR se mantiene en Quest 3:
-- 🛡️ **SponsorBlock / AdStop** con los perfiles Equilibrado e Intensivo, con aviso al saltar y en la barra de controles del cine.
-- 🏷️ **DeArrow**: títulos y miniaturas sin *clickbait*, con un clic.
-- 🚫 Sin anuncios, calidad hasta 4K, cuentas, suscripciones, historial y búsqueda.
-- 🎬 Los 16 escenarios de cine y el inicio tipo launcher.
+### 🥽 Hecho para las gafas
+- **Sin interfaz de tele**: todo se maneja con el láser de los mandos o con las manos.
+- **Tamaño de gafas**: textos, botones y tarjetas más grandes, en un panel redimensionable de Horizon OS.
+- **Subtítulos más grandes** de serie, legibles dentro de las gafas.
+- **4K a 60 fps** de serie en Quest 3, 3S y Pro.
 
-💡 **Luz ambiente (tipo *ambilight*)**: la interfaz es la misma, pero la sala se tiñe con los colores y la luz del vídeo que estás viendo.
+### ▶️ Reproductor mejorado
+- **SponsorBlock**: los patrocinios se marcan en **amarillo** en la barra, y cuando se salta un tramo aparece un botón **Deshacer salto** durante 5 segundos.
+- **DeArrow** activado de serie: títulos y miniaturas sin *clickbait*.
+- **ReturnYouTubeDislike**: vuelve a mostrar los "no me gusta".
+
+### 💡 Luz ambiente que se adapta al vídeo
+La interfaz es la misma, pero la sala se tiñe con los colores y la luz de lo que estás viendo.
 
 | Vídeo de ciudad cyberpunk | Vídeo del fondo del mar |
 |---|---|
@@ -98,11 +104,13 @@ Todo lo de SmartTube y SmartTube VR se mantiene en Quest 3:
 
 <sub>*Diseños de muestra. En la app, los tramos de SponsorBlock son siempre amarillos.*</sub>
 
-Cambios para Quest 3:
-- **Sin interfaz de tele (Leanback)**: los menús pensados para el mando a distancia pasan a manejarse con el láser de los mandos de Quest y con las manos.
-- **Tamaño de gafas**: textos, botones y tarjetas más grandes y a la distancia correcta, en una ventana de panel redimensionable de Horizon OS.
-- **Integración con [NebulaVR](https://github.com/pilahito/NebularVR-Quest)**: se abre desde la tarjeta de SmartTube VR del launcher, toma el tema de colores elegido (playa de día, noche morada, atardecer o bosque esmeralda) y puede verse en la pantalla de cine de [SmartTube-VR-3D](https://github.com/pilahito/SmartTube-VR-3D).
-- **Actualización sin perder datos**: se seguirá firmando con la misma clave, así que se instala encima.
+### 🌌 Integrado con NebulaVR
+- Se abre desde la tarjeta de SmartTube VR del launcher [NebulaVR](https://github.com/pilahito/NebularVR-Quest).
+- Usa el mismo tema de colores que elijas allí: playa de día, noche morada, atardecer o bosque esmeralda.
+- El vídeo también se podrá ver en la pantalla de cine 3D de [SmartTube-VR-3D](https://github.com/pilahito/SmartTube-VR-3D).
+
+### 🔄 Sin perder nada
+Se firmará con la misma clave que ahora, así que se instalará encima de tu versión actual sin perder tus ajustes.
 
 ---
 
