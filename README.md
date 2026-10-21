@@ -11,8 +11,13 @@ SmartTube original de siempre, con SponsorBlock y DeArrow, un inicio tipo *launc
 ![Android](https://img.shields.io/badge/Android-5.0%2B-3ddc84)
 [![Licencia MIT](https://img.shields.io/badge/licencia-MIT-blue)](LICENSE)
 
-![Los 16 escenarios (renders)](docs/escenarios.png)
-<sub>*Renders headless (Java2D) de la geometría real de cada escenario. No son capturas de la app en unas Quest.*</sub>
+![La nueva interfaz de SmartTube VR en Meta Quest 3](docs/quest3/banner.jpg)
+
+| Inicio con el láser del mando | Reproductor en modo cine |
+|---|---|
+| ![Inicio de SmartTube VR en Quest 3](docs/quest3/panel-quest3.jpg) | ![Reproductor en modo cine](docs/quest3/cine-playa.jpg) |
+
+<sub>*Así se verá la nueva interfaz para Quest 3. Son diseños de muestra, no capturas de la app real.*</sub>
 
 </div>
 
@@ -54,7 +59,9 @@ En la reproducción, pulsa **Escenarios** (o **Menú / Y** en el mando) para cam
 Con un clic cambias a títulos y miniaturas limpios, sin *clickbait*, o vuelves a los originales.
 
 <details>
-<summary>🖼️ Ver los escenarios uno a uno (renders)</summary>
+<summary>🖼️ Ver los 16 escenarios actuales (renders)</summary>
+
+![Los 16 escenarios (renders)](docs/escenarios.png)
 
 | | |
 |---|---|
@@ -74,14 +81,6 @@ Se generan con [`tools/previews/RenderPreviews.java`](tools/previews/RenderPrevi
 
 ## 🚀 Lo próximo: SmartTube VR para Meta Quest 3 y NebulaVR
 > 🛠️ **En desarrollo.** Esto todavía no está en la versión publicada.
-
-![SmartTube VR para Meta Quest 3](docs/quest3/banner.jpg)
-
-| Panel en Quest 3 con láser | Cine en la playa |
-|---|---|
-| ![Panel en Quest 3](docs/quest3/panel-quest3.jpg) | ![Cine en la playa](docs/quest3/cine-playa.jpg) |
-
-<sub>*Diseños de muestra, no capturas de la app real.*</sub>
 
 La base sigue siendo **el código real de SmartTube completo**: sin anuncios, SponsorBlock, DeArrow, 4K, cuentas y suscripciones. Se adapta a **Meta Quest 3**, no a televisores:
 Todo lo de SmartTube y SmartTube VR se mantiene en Quest 3:
