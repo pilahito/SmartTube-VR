@@ -34,7 +34,9 @@ class CinemaPatchTests(unittest.TestCase):
             cinema.main(root)
             self.assertIn('mQuestCinema.release()', surface.read_text())
             self.assertIn('setCinemaPip(isInPictureInPictureMode)', activity.read_text())
-            self.assertEqual(len(list((root / cinema.PACKAGE / 'cinema').glob('*.java'))), 3)
+            self.assertEqual(len(list((root / cinema.PACKAGE / 'cinema').glob('*.java'))), 4)
+            text = surface.read_text()
+            self.assertIn('setResize(resize); setAspect(aspect);', text)
 
     def test_anchor_failure_does_not_leave_half_patched_checkout(self):
         with tempfile.TemporaryDirectory() as folder:

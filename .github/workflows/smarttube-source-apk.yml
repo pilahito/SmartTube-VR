@@ -76,6 +76,8 @@ jobs:
           mkdir -p /tmp/cinema-tests
           javac -d /tmp/cinema-tests enhancements/patches/cinema/CinemaGeometry.java enhancements/tests/CinemaGeometryTest.java
           java -cp /tmp/cinema-tests CinemaGeometryTest
+          javac -d /tmp/cinema-tests enhancements/patches/cinema/VirtualScreen.java enhancements/tests/VirtualScreenTest.java
+          java -cp /tmp/cinema-tests VirtualScreenTest
       - name: Check that the scenery preview renderer still builds against the real geometry
         shell: bash
         run: |

@@ -20,7 +20,14 @@ public final class CinemaSceneView extends View {
     private List<CinemaGeometry.Face> faces;
     private final List<Path> projected = new ArrayList<>();
     private int scene, brightness=75;
-    private boolean eco;
+    private boolean eco, curvedFrame;
+    private int[] screen;
+    private int frameDistance=3;
+    private final Path frame=new Path();
+    /** Decorative bezel around the video. "Curved" only bends this frame; the video surface stays flat. */
+    public void setScreenFrame(int[] rect, boolean curved, int distance) {
+        screen=rect; curvedFrame=curved; frameDistance=distance; invalidate();
+    }
     public CinemaSceneView(Context context) {
         super(context);
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
@@ -98,5 +105,15 @@ public final class CinemaSceneView extends View {
         }
         paint.setColor(Color.argb((100-brightness)*255/100,0,0,0));
         canvas.drawRect(0,0,w,h,paint);
+        if(screen!=null) {
+            float l=screen[0],t=screen[1],r=screen[2],b=screen[3],pad=Math.max(4,(b-t)*.025f);
+            float bend=curvedFrame?VirtualScreen.curveDepth((int)(b-t),frameDistance):0;
+            frame.reset();
+            // Outer bezel: on a curved screen the top/bottom edges bow outwards toward the viewer.
+            frame.moveTo(l-pad,t-pad); frame.quadTo((l+r)/2,t-pad-bend*2,r+pad,t-pad);
+            frame.lineTo(r+pad,b+pad); frame.quadTo((l+r)/2,b+pad+bend*2,l-pad,b+pad); frame.close();
+            paint.setColor(0xff05070b); canvas.drawPath(frame,paint);
+            if(curvedFrame) { paint.setColor(0x3366f5df); canvas.drawRect(l-pad,t-pad,l,b+pad,paint); canvas.drawRect(r,t-pad,r+pad,b+pad,paint); }
+        }
     }
 }
