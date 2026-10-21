@@ -75,6 +75,14 @@ Se generan con [`tools/previews/RenderPreviews.java`](tools/previews/RenderPrevi
 ## 🚀 Lo próximo: SmartTube VR para Meta Quest 3 y NebulaVR
 > 🛠️ **En desarrollo.** Esto todavía no está en la versión publicada.
 
+![SmartTube VR para Meta Quest 3](docs/quest3/banner.jpg)
+
+| Panel en Quest 3 con láser | Cine en la playa |
+|---|---|
+| ![Panel en Quest 3](docs/quest3/panel-quest3.jpg) | ![Cine en la playa](docs/quest3/cine-playa.jpg) |
+
+<sub>*Diseños de muestra, no capturas de la app real.*</sub>
+
 La base sigue siendo **el código real de SmartTube completo**: sin anuncios, SponsorBlock, DeArrow, 4K, cuentas y suscripciones. Se adapta a **Meta Quest 3**, no a televisores:
 - **Sin interfaz de tele (Leanback)**: los menús pensados para el mando a distancia pasan a manejarse con el láser de los mandos de Quest y con las manos.
 - **Tamaño de gafas**: textos, botones y tarjetas más grandes y a la distancia correcta, en una ventana de panel redimensionable de Horizon OS.
