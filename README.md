@@ -99,6 +99,8 @@ Sigue siendo **el SmartTube real y completo** (sin anuncios, cuentas, suscripcio
 - **Información del vídeo**: título, canal (con botón de suscribirse), visitas, fecha, "me gusta" y "no me gusta", descripción con enlaces, y **capítulos** para saltar directo a cada parte.
 - En la barra de controles hay dos botones: **ⓘ Información**, que abre o cierra la descripción, y **💬 Comentarios**. Los paneles van cerrados de serie para que el vídeo se vea limpio.
 
+![Botones de información y comentarios](docs/interfaz/iconos-chat-info.jpg)
+
 ![Información del vídeo y comentarios](docs/interfaz/info-comentarios.jpg)
 
 ### 🖥️ Pantalla virtual a tu gusto
