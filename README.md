@@ -97,6 +97,7 @@ Sigue siendo **el SmartTube real y completo** (sin anuncios, cuentas, suscripcio
 - **ReturnYouTubeDislike**: vuelve a mostrar los "no me gusta".
 - **Comentarios** en un panel lateral junto al vídeo, con las respuestas, sin tener que parar la reproducción.
 - **Información del vídeo**: título, canal (con botón de suscribirse), visitas, fecha, "me gusta" y "no me gusta", descripción con enlaces, y **capítulos** para saltar directo a cada parte.
+- En la barra de controles hay dos botones: **ⓘ Información**, que abre o cierra la descripción, y **💬 Comentarios**. Los paneles van cerrados de serie para que el vídeo se vea limpio.
 
 ![Información del vídeo y comentarios](docs/interfaz/info-comentarios.jpg)
 
