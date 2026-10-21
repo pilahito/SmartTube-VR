@@ -13,9 +13,9 @@ SmartTube original de siempre, con SponsorBlock y DeArrow, un inicio tipo *launc
 
 ![La nueva interfaz de SmartTube VR en Meta Quest 3](docs/quest3/banner.jpg)
 
-| Inicio con el láser del mando | Reproductor en modo cine |
-|---|---|
-| ![Inicio de SmartTube VR en Quest 3](docs/quest3/panel-quest3.jpg) | ![Reproductor en modo cine](docs/quest3/cine-playa.jpg) |
+| Inicio | Reproductor | Escenarios |
+|---|---|---|
+| ![Inicio en Quest 3](docs/interfaz/inicio.jpg) | ![Reproductor con SponsorBlock y Deshacer salto](docs/interfaz/reproductor.jpg) | ![Menú de los 16 escenarios](docs/interfaz/escenarios.jpg) |
 
 <sub>*Así se verá la nueva interfaz para Quest 3. Son diseños de muestra, no capturas de la app real.*</sub>
 
