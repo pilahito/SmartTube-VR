@@ -23,7 +23,8 @@ SmartTube original de siempre, con SponsorBlock y DeArrow, un inicio tipo *launc
 
 ---
 
-## ✨ Qué trae
+## ✨ Qué trae la versión actual
+> Esto es lo que ya funciona en el APK publicado. Lo nuevo para Quest 3 está más abajo, en [Lo próximo](#-lo-próximo-versión-para-meta-quest-3-y-nebulavr).
 
 ### 🏠 Inicio tipo launcher
 - Al abrir la app aparece un **inicio con iconos grandes**, dibujado sobre el escenario que hayas elegido.
@@ -35,7 +36,7 @@ SmartTube original de siempre, con SponsorBlock y DeArrow, un inicio tipo *launc
 ### 📐 Se adapta a la ventana
 - El número de columnas, el tamaño de los iconos y los textos cambian con la ventana.
 - Funciona al redimensionar el panel de Quest, en **horizontal y en vertical** y con cualquier proporción.
-- Navegación completa con el **mando o la cruceta**. No hace falta pantalla táctil.
+- Se maneja entero con los **mandos de las Quest**. No hace falta tocar la pantalla.
 
 ### 🎬 16 escenarios de cine
 | Naturaleza | Salones | Playas | Neón y otros |
