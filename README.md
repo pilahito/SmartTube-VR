@@ -175,6 +175,7 @@ Este repositorio **no copia ni reimplementa YouTube ni SmartTube**. Solo contien
 | Parche | Qué hace |
 |---|---|
 | `smarttube_adstop.py` | Perfiles AdStop de SponsorBlock, accesos rápidos de DeArrow con arreglos de robustez, y nombre y paquete propios. |
+| `smarttube_quest_media.py` | Para Quest 3: botón **Deshacer** unos 5 s tras cada salto automático de SponsorBlock, tramos de patrocinio en **amarillo** en la barra, DeArrow activado por defecto, 4K VP9 60 fps por defecto en Quest 3/3S/Pro y subtítulos a 1,35× para leerlos bien en las gafas. |
 | `smarttube_buttons_visual.py` | Retoques de contraste en botones y tarjetas. Solo XML. |
 | `smarttube_cinema.py` + `cinema/` | Escenarios y controles de cine alrededor del reproductor original. |
 | `smarttube_home.py` + `home/` | El inicio tipo launcher (`QuestHomeActivity`). |

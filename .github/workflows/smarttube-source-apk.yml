@@ -85,6 +85,8 @@ jobs:
           java -cp /tmp/home-tests HomeTilesTest
       - name: Apply SponsorBlock and DeArrow improvements to original
         run: python3 enhancements/patches/smarttube_adstop.py --source smarttube
+      - name: Apply Quest 3 media tweaks (SponsorBlock undo, yellow sponsor marks, DeArrow on, 4K60, subtitles)
+        run: python3 enhancements/patches/smarttube_quest_media.py --source smarttube
       - name: Apply visual-only button changes
         run: python3 enhancements/patches/smarttube_buttons_visual.py --source smarttube
       - name: Integrate cinema scenery and controls into the original player
