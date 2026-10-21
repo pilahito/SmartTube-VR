@@ -20,7 +20,8 @@ def main(root):
              '        setBackgroundType(PlaybackSupportFragment.BG_LIGHT);\n'
              '        if (root instanceof FrameLayout) {\n'
              '            mQuestCinema = new com.liskovsoft.smartyoutubetv2.tv.ui.playback.cinema.QuestCinemaController(\n'
-             '                    (FrameLayout) root, mVideoSurfaceRoot, mLeanbackSubtitles);\n'
+             '                    (FrameLayout) root, mVideoSurfaceRoot, mLeanbackSubtitles,\n'
+             '                    (resize, aspect) -> { setResize(resize); setAspect(aspect); });\n'
              '        }\n        return root;'),
             ('    public void onDestroyView() {\n        mVideoSurfaceWrapper = null;',
              '    public void onDestroyView() {\n'
@@ -59,8 +60,8 @@ def main(root):
         if target.exists():
             raise SystemExit(f'Refusing to overwrite existing cinema source: {target}')
         planned[target] = source.read_text(encoding='utf-8')
-    if len(planned) != 5:
-        raise SystemExit('Expected all three cinema Java sources')
+    if len(planned) != 6:
+        raise SystemExit('Expected all four cinema Java sources')
     for path, content in planned.items():
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding='utf-8')

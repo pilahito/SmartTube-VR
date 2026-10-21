@@ -18,10 +18,14 @@ import android.widget.Toast;
 import com.liskovsoft.smartyoutubetv2.common.prefs.SponsorBlockData;
 import com.liskovsoft.smartyoutubetv2.common.prefs.DeArrowData;
 import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData;
+import com.liskovsoft.smartyoutubetv2.common.prefs.PlayerData;
 import java.util.Locale;
 
 /** Isolated scenery controls. Never replaces SmartTube's video engine or controls. */
 public final class QuestCinemaController {
+    /** Applies a resize mode and aspect to the real player immediately (SurfacePlaybackFragment). */
+    public interface FormatApplier { void apply(int resizeMode, float aspect); }
+    private final FormatApplier formatApplier;
     private final Context context;
     private final FrameLayout root;
     private final View video, subtitles;
@@ -33,9 +37,10 @@ public final class QuestCinemaController {
     private final View.OnLayoutChangeListener layoutListener;
     private AlertDialog dialog;
     private final boolean spanish;
-    private int scene, size, brightness, distance;
-    private boolean enabled, eco, pip;
-    public QuestCinemaController(FrameLayout root, View video, View subtitles) {
+    private int scene, size, brightness, distance, format;
+    private boolean enabled, eco, pip, curved;
+    public QuestCinemaController(FrameLayout root, View video, View subtitles, FormatApplier formatApplier) {
+        this.formatApplier=formatApplier;
         this.context=root.getContext(); this.root=root; this.video=video; this.subtitles=subtitles;
         originalVideo=new FrameLayout.LayoutParams((FrameLayout.LayoutParams)video.getLayoutParams());
         originalSubtitles=new FrameLayout.LayoutParams((FrameLayout.LayoutParams)subtitles.getLayoutParams());
@@ -43,9 +48,11 @@ public final class QuestCinemaController {
         spanish=Locale.getDefault().getLanguage().equals("es");
         prefs=context.getSharedPreferences("quest_cinema_v1",Context.MODE_PRIVATE);
         scene=Math.max(0,Math.min(CinemaGeometry.COUNT-1,prefs.getInt("scene",0)));
-        size=Math.max(50,Math.min(90,prefs.getInt("size",72)));
+        size=VirtualScreen.clampSize(prefs.getInt("size",72));
         brightness=Math.max(15,Math.min(100,prefs.getInt("brightness",75)));
-        distance=Math.max(2,Math.min(5,prefs.getInt("distance",3)));
+        distance=VirtualScreen.clampDistance(prefs.getInt("distance",3));
+        format=VirtualScreen.clampMode(prefs.getInt("format",VirtualScreen.FIT));
+        curved=prefs.getBoolean("curved",false);
         enabled=prefs.getBoolean("enabled",true); eco=prefs.getBoolean("eco",false);
         scenery=new CinemaSceneView(context);
         root.addView(scenery,0,new FrameLayout.LayoutParams(-1,-1));
@@ -90,8 +97,7 @@ public final class QuestCinemaController {
         hint.setText(t("Escenarios en ventana Android · mando, ratón o toque","Scenery in Android window · controller, mouse or touch"));
         hint.setTextColor(0xffc2ccd9); hint.setTextSize(13); hint.setPadding(0,dp(8),0,dp(10)); panel.addView(hint);
         row(panel,t("Elegir escenario","Choose scenery"),this::chooseScene);
-        row(panel,t("Tamaño de pantalla: ","Screen size: ")+size+"%",()->choices(t("Tamaño de pantalla","Screen size"),new String[]{"50%","60%","72%","82%","90%"},new int[]{50,60,72,82,90},size,v->{size=v;enabled=true;apply();}));
-        row(panel,t("Distancia virtual: ","Virtual distance: ")+distance+" m",()->choices(t("Distancia virtual de la pantalla","Virtual screen distance"),new String[]{"2 m","3 m","4 m","5 m"},new int[]{2,3,4,5},distance,v->{distance=v;enabled=true;apply();}));
+        row(panel,t("Pantalla virtual","Virtual screen"),this::screenMenu);
         row(panel,t("Brillo ambiente: ","Ambient brightness: ")+brightness+"%",()->choices(t("Brillo del escenario","Scenery brightness"),new String[]{"25%","50%","75%","100%"},new int[]{25,50,75,100},brightness,v->{brightness=v;apply();}));
         row(panel,t("ECO: ","ECO: ")+(eco?t("activado","on"):t("desactivado","off")),()->{eco=!eco;apply();refreshMenu();});
         row(panel,t("Guardar este escenario como favorito","Save this scenery as favorite"),()->{prefs.edit().putInt("favorite",scene).apply();toast(t("Favorito guardado","Favorite saved"));});
@@ -104,6 +110,31 @@ public final class QuestCinemaController {
         dialog=new AlertDialog.Builder(context).setView(scroll).create();
         dialog.show();
         if(dialog.getWindow()!=null) dialog.getWindow().setLayout(Math.min(dp(560),Math.max(dp(280),root.getWidth()-dp(40))),Math.max(dp(200),(int)(root.getHeight()*.88f)));
+    }
+    /** "Pantalla virtual": size, distance, format and frame shape, all saved in quest_cinema_v1. */
+    private void screenMenu() {
+        dismiss();
+        String[] modes=VirtualScreen.modeNames(spanish);
+        String[] items={t("Tamaño: ","Size: ")+size+"%",t("Distancia: ","Distance: ")+distance+" m",
+                t("Formato: ","Format: ")+modes[format],
+                t("Marco: ","Frame: ")+(curved?t("curvo","curved"):t("plano","flat"))};
+        dialog=new AlertDialog.Builder(context).setTitle(t("Pantalla virtual","Virtual screen"))
+                .setItems(items,(d,i)->{
+                    if(i==0){String[] l=new String[VirtualScreen.SIZES.length];for(int k=0;k<l.length;k++)l[k]=VirtualScreen.SIZES[k]+"%";
+                        choices(t("Tamaño de pantalla","Screen size"),l,VirtualScreen.SIZES,size,v->{size=v;enabled=true;apply();});}
+                    else if(i==1){String[] l=new String[VirtualScreen.DISTANCES.length];for(int k=0;k<l.length;k++)l[k]=VirtualScreen.DISTANCES[k]+" m";
+                        choices(t("Distancia virtual","Virtual distance"),l,VirtualScreen.DISTANCES,distance,v->{distance=v;enabled=true;apply();});}
+                    else if(i==2){int[] v=new int[VirtualScreen.MODE_COUNT];for(int k=0;k<v.length;k++)v[k]=k;
+                        choices(t("Formato del vídeo","Video format"),modes,v,format,x->{format=x;applyFormat();apply();});}
+                    else {curved=!curved;apply();screenMenu();}
+                }).setNegativeButton(t("Volver","Back"),null).create();dialog.show();
+    }
+    /** Stores the format in SmartTube's own PlayerData (so its loader reapplies it) and applies it now. */
+    private void applyFormat() {
+        int resize=VirtualScreen.resizeMode(format); float aspect=VirtualScreen.aspect(format);
+        PlayerData data=PlayerData.instance(context);
+        data.setResizeMode(resize); data.setAspectRatio(aspect);
+        if(formatApplier!=null) formatApplier.apply(resize,aspect);
     }
     private void chooseScene() {
         dismiss();
@@ -141,7 +172,7 @@ public final class QuestCinemaController {
     private void toast(String s){Toast.makeText(context,s,Toast.LENGTH_LONG).show();}
     private void dismiss(){if(dialog!=null){dialog.dismiss();dialog=null;}}
     private void apply() {
-        prefs.edit().putInt("scene",scene).putInt("size",size).putInt("distance",distance).putInt("brightness",brightness)
+        prefs.edit().putInt("scene",scene).putInt("size",size).putInt("distance",distance).putInt("brightness",brightness).putInt("format",format).putBoolean("curved",curved)
                 .putBoolean("eco",eco).putBoolean("enabled",enabled).apply();
         scenery.configure(scene,eco,brightness); scenery.setVisibility(enabled&&!pip?View.VISIBLE:View.GONE);
         applyLayout();
@@ -149,7 +180,7 @@ public final class QuestCinemaController {
     private void applyLayout() {
         if(root.getWidth()==0 || root.getHeight()==0)return;
         // Distance uses the same perspective rule as a fixed-size virtual screen (size / distance).
-        float factor=enabled&&!pip?Math.max(.35f,Math.min(.94f,size/100f*3f/distance)):1f;
+        float factor=enabled&&!pip?VirtualScreen.factor(size,distance):1f;
         FrameLayout.LayoutParams vp=new FrameLayout.LayoutParams(originalVideo);
         FrameLayout.LayoutParams sp=new FrameLayout.LayoutParams(originalSubtitles);
         if(enabled&&!pip) {
@@ -157,6 +188,8 @@ public final class QuestCinemaController {
             sp.width=vp.width;sp.height=vp.height;sp.gravity=Gravity.CENTER;
         }
         video.setLayoutParams(vp);subtitles.setLayoutParams(sp);
+        if(enabled&&!pip) scenery.setScreenFrame(VirtualScreen.rect(root.getWidth(),root.getHeight(),size,distance),curved,distance);
+        else scenery.setScreenFrame(null,false,distance);
         int p=Math.round(originalPadding*factor);subtitles.setPadding(p,subtitles.getPaddingTop(),p,subtitles.getPaddingBottom());
     }
     public void setPip(boolean pip){this.pip=pip;if(pip)dismiss();opener.setVisibility(pip?View.GONE:View.VISIBLE);apply();}
