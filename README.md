@@ -4,6 +4,8 @@
 
 **YouTube sin anuncios en tus Meta Quest, dentro de un cine virtual.**
 
+<sub>Basado en el [SmartTube original](https://github.com/yuliskov/SmartTube) de [yuliskov](https://github.com/yuliskov) y sus colaboradores (licencia MIT).</sub>
+
 SmartTube original de siempre, con SponsorBlock y DeArrow, un inicio tipo *launcher* y 16 escenarios alrededor del vídeo. Todo se maneja con el mando, y pronto también con las manos.
 
 [![Compilación](https://github.com/pilahito/SmartTube-VR/actions/workflows/smarttube-source-apk.yml/badge.svg)](https://github.com/pilahito/SmartTube-VR/actions/workflows/smarttube-source-apk.yml)
@@ -201,6 +203,7 @@ javac -d /tmp/r patches/cinema/CinemaGeometry.java tools/previews/RenderPreviews
 - **[SmartTube](https://github.com/yuliskov/SmartTube)**, de [yuliskov](https://github.com/yuliskov) y sus colaboradores: todo el reproductor, la navegación y los servicios. Si te gusta, apoya el proyecto original.
 - **[SponsorBlock](https://sponsor.ajay.app/)** y **[DeArrow](https://dearrow.ajay.app/)**, de Ajay Ramachandran y su comunidad.
 - Los parches de SmartTube VR son de [pilahito](https://github.com/pilahito).
+- **Icono y banner de SmartTube VR**: dibujados por código para este proyecto (`tools/make_icon.py`), sin imágenes de terceros.
 
 ## 📄 Licencia
 [MIT](LICENSE), la misma licencia que el SmartTube original. Se conserva el aviso de copyright de yuliskov.
