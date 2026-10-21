@@ -97,10 +97,12 @@ Sigue siendo **el SmartTube real y completo** (sin anuncios, cuentas, suscripcio
 
 ### 🖥️ Pantalla virtual a tu gusto
 - **Forma**: plana o curva, con la curvatura que quieras.
-- **Formato**: 16:9, panorámica 21:9 o la del propio vídeo.
-- **Tamaño y distancia**: más grande o más pequeña, más cerca o más lejos, con el joystick o pellizcando con las manos.
-- **Modo de vídeo**: normal 2D, 3D lado a lado o arriba y abajo, 180° y 360°.
+- **Formato**: 16:9, 21:9, 32:9, 4:3 o Ajustar al vídeo.
+- **Tamaño, distancia, altura e inclinación**, con el joystick o pellizcando con las manos.
+- **Cómo verlo**: Cine, Tumbado (en el techo), Escritorio, 3D lado a lado o arriba y abajo, 180° y 360°.
 - Se guarda un ajuste por modo, y puedes guardar tus favoritos (por ejemplo "Cine grande" o "Monitor de escritorio").
+
+![Panel Pantalla virtual](docs/interfaz/pantalla-ajustes.jpg)
 
 <sub>*La pantalla curva y los modos 3D, 180° y 360° se verán en la pantalla de cine 3D ([SmartTube-VR-3D](https://github.com/pilahito/SmartTube-VR-3D) o NebulaVR). En la ventana 2D de las Quest se ajustan el formato, el tamaño y la distancia.*</sub>
 
