@@ -89,6 +89,14 @@ Todo lo de SmartTube y SmartTube VR se mantiene en Quest 3:
 - 🚫 Sin anuncios, calidad hasta 4K, cuentas, suscripciones, historial y búsqueda.
 - 🎬 Los 16 escenarios de cine y el inicio tipo launcher.
 
+💡 **Luz ambiente (tipo *ambilight*)**: la interfaz es la misma, pero la sala se tiñe con los colores y la luz del vídeo que estás viendo.
+
+| Vídeo de ciudad cyberpunk | Vídeo del fondo del mar |
+|---|---|
+| ![La sala en magenta y cian](docs/interfaz/adapta-cyberpunk.jpg) | ![La sala en azul con reflejos de agua](docs/interfaz/adapta-oceano.jpg) |
+
+<sub>*Diseños de muestra. En la app, los tramos de SponsorBlock son siempre amarillos.*</sub>
+
 Cambios para Quest 3:
 - **Sin interfaz de tele (Leanback)**: los menús pensados para el mando a distancia pasan a manejarse con el láser de los mandos de Quest y con las manos.
 - **Tamaño de gafas**: textos, botones y tarjetas más grandes y a la distancia correcta, en una ventana de panel redimensionable de Horizon OS.
