@@ -80,7 +80,7 @@ public final class QuestHud {
     private final View.OnLayoutChangeListener layoutListener;
     private final LinearLayout pill, bar;
     private final TextView device, wifiText, batteryText, time, quality, deArrow, likes, dislikes, rydNote, legend;
-    private final View sepDevice, sepWifi, legendDot;
+    private final View sepDevice, sepWifi, legendDot, likesBox;
     private final QuestUi.Icon wifiIcon, batteryIcon, playIcon;
     private final SegmentBar seek;
     private boolean shown, released;
@@ -136,7 +136,7 @@ public final class QuestHud {
         // ---- control bar (bottom)
         bar = new LinearLayout(context);
         bar.setOrientation(LinearLayout.VERTICAL);
-        bar.setPadding(dp(24), dp(12), dp(24), dp(10));
+        bar.setPadding(dp(24), dp(10), dp(24), dp(8));
         bar.setBackground(QuestUi.box(context, QuestUi.GLASS, 26, 1.5f, QuestUi.border));
 
         LinearLayout row1 = new LinearLayout(context);
@@ -154,11 +154,12 @@ public final class QuestHud {
         deArrow = chip("DeArrow", host.deArrowOn(), null);
         deArrow.setFocusable(true);
         deArrow.setClickable(true);
-        deArrow.setOnClickListener(v -> { host.toggleDeArrow(); deArrow.setSelected(host.deArrowOn()); });
+        deArrow.setOnClickListener(v -> { host.toggleDeArrow(); showDeArrow(); });
         row1.addView(deArrow, chipParams());
-        LinearLayout likesBox = new LinearLayout(context);
-        likesBox.setOrientation(LinearLayout.VERTICAL);
-        likesBox.setPadding(dp(14), 0, 0, 0);
+        LinearLayout likesColumn = new LinearLayout(context);
+        likesBox = likesColumn;
+        likesColumn.setOrientation(LinearLayout.VERTICAL);
+        likesColumn.setPadding(dp(16), 0, 0, 0);
         LinearLayout counts = new LinearLayout(context);
         counts.setGravity(Gravity.CENTER_VERTICAL);
         counts.addView(new QuestUi.Icon(context, "thumb_up", Color.WHITE), new LinearLayout.LayoutParams(dp(26), dp(26)));
@@ -169,14 +170,14 @@ public final class QuestHud {
         dislikes = text("", 15, Color.WHITE);
         dislikes.setPadding(dp(4), 0, 0, 0);
         counts.addView(dislikes);
-        likesBox.addView(counts);
+        likesColumn.addView(counts);
         rydNote = text("Return YouTube Dislike", 11, QuestUi.MUTED);
-        likesBox.addView(rydNote);
-        row1.addView(likesBox);
+        likesColumn.addView(rydNote);
+        row1.addView(likesColumn);
         bar.addView(row1, new LinearLayout.LayoutParams(-1, -2));
 
         seek = new SegmentBar(context);
-        bar.addView(seek, new LinearLayout.LayoutParams(-1, dp(34)));
+        bar.addView(seek, new LinearLayout.LayoutParams(-1, dp(30)));
 
         LinearLayout row3 = new LinearLayout(context);
         row3.setGravity(Gravity.CENTER_VERTICAL);
@@ -188,8 +189,8 @@ public final class QuestHud {
         row3.addView(legend);
         View grow2 = new View(context);
         row3.addView(grow2, new LinearLayout.LayoutParams(0, 1, 1f));
-        row3.addView(iconButton(new QuestUi.Icon(context, "gear", Color.WHITE), spanish ? "Ajustes" : "Settings", host::openOptions), new LinearLayout.LayoutParams(dp(44), dp(40)));
-        row3.addView(iconButton(new QuestUi.Icon(context, "expand", Color.WHITE), spanish ? "Pantalla completa" : "Fullscreen", host::toggleFullscreen), new LinearLayout.LayoutParams(dp(44), dp(40)));
+        row3.addView(iconButton(new QuestUi.Icon(context, "gear", Color.WHITE), spanish ? "Ajustes" : "Settings", host::openOptions), new LinearLayout.LayoutParams(dp(40), dp(34)));
+        row3.addView(iconButton(new QuestUi.Icon(context, "expand", Color.WHITE), spanish ? "Pantalla completa" : "Fullscreen", host::toggleFullscreen), new LinearLayout.LayoutParams(dp(40), dp(34)));
         bar.addView(row3, new LinearLayout.LayoutParams(-1, -2));
 
         FrameLayout.LayoutParams barParams = new FrameLayout.LayoutParams(dp(900), -2, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
@@ -229,11 +230,24 @@ public final class QuestHud {
     }
 
     private TextView chip(String label, boolean selected, Runnable onClick) {
-        TextView t = QuestUi.chip(context, label, selected, onClick == null ? () -> {} : onClick);
+        TextView t = QuestUi.chip(context, label, false, onClick == null ? () -> {} : onClick);
         t.setTextSize(15);
+        t.setPadding(dp(16), 0, dp(16), 0);
+        t.setGravity(Gravity.CENTER);
+        android.graphics.drawable.StateListDrawable bg = new android.graphics.drawable.StateListDrawable();
+        bg.addState(new int[]{android.R.attr.state_pressed}, QuestUi.box(context, QuestUi.FILL_HOVER, 20, 1, QuestUi.border));
+        bg.addState(new int[]{android.R.attr.state_focused}, QuestUi.box(context, QuestUi.FILL_HOVER, 20, 2, QuestUi.accent));
+        bg.addState(new int[]{android.R.attr.state_hovered}, QuestUi.box(context, QuestUi.FILL_HOVER, 20, 1, QuestUi.border));
+        bg.addState(new int[]{}, QuestUi.box(context, 0x14ffffff, 20, 1, 0x29ffffff));
+        t.setBackground(bg);
         t.setFocusable(onClick != null);
         t.setClickable(onClick != null);
         return t;
+    }
+
+    /** DeArrow on: white label; off: muted. The chip itself stays neutral like in the mockup. */
+    private void showDeArrow() {
+        deArrow.setTextColor(host.deArrowOn() ? Color.WHITE : QuestUi.MUTED);
     }
 
     private LinearLayout.LayoutParams chipParams() {
@@ -244,7 +258,7 @@ public final class QuestHud {
 
     private void fitWidth() {
         FrameLayout.LayoutParams p = (FrameLayout.LayoutParams) bar.getLayoutParams();
-        int width = Math.min(dp(900), Math.max(dp(360), root.getWidth() - dp(48)));
+        int width = Math.min(dp(840), Math.max(dp(360), Math.round(root.getWidth() * .70f)));
         if (p.width != width) { p.width = width; bar.setLayoutParams(p); }
     }
 
@@ -260,7 +274,7 @@ public final class QuestHud {
         if (show) {
             fitWidth();
             refreshStatus();
-            deArrow.setSelected(host.deArrowOn());
+            showDeArrow();
             update();
             handler.postDelayed(tick, TICK_MS);
         }
@@ -302,9 +316,10 @@ public final class QuestHud {
         quality.setText(q == null ? "" : q);
         quality.setVisibility(q == null || q.isEmpty() ? View.GONE : View.VISIBLE);
         String l = host.likes(), d = host.dislikes();
-        likes.setText(l == null ? "–" : l);
-        dislikes.setText(d == null ? "–" : d);
-        rydNote.setVisibility(d == null ? View.INVISIBLE : View.VISIBLE);
+        likesBox.setVisibility(l == null && d == null ? View.GONE : View.VISIBLE);
+        likes.setText(l == null ? "" : l);
+        dislikes.setText(d == null ? "" : d);
+        rydNote.setVisibility(d == null ? View.GONE : View.VISIBLE);
         if (System.currentTimeMillis() - lastStatus > STATUS_MS) refreshStatus();
     }
 

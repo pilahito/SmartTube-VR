@@ -94,7 +94,10 @@ adb shell input keyevent KEYCODE_BACK; sleep 2
 adb shell input keyevent KEYCODE_DPAD_CENTER
 shot 06_hud_tema_cyberpunk 3
 adb shell input keyevent KEYCODE_MENU; sleep 2
-tap_node text "Pantalla virtual|Virtual screen" && shot 07_pantalla_virtual 3
+tap_node text "Ajustes de video|Video settings" && shot 07_pantalla_virtual 3
+adb shell input keyevent KEYCODE_BACK; sleep 2
+adb shell input keyevent KEYCODE_MENU; sleep 2
+tap_node text "Más opciones|More options" && shot 07b_mas_opciones 3
 adb shell input keyevent KEYCODE_BACK; sleep 2
 adb shell input keyevent KEYCODE_MENU; sleep 2
 tap_node text "Escenarios|Scenery" && sleep 2 && tap_node text "Playa tropical|Tropical beach"; sleep 2

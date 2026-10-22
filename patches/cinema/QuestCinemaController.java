@@ -105,7 +105,7 @@ public final class QuestCinemaController {
         Window w=d.getWindow();
         if(w==null) return;
         w.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        w.setDimAmount(.3f); w.setGravity(gravity);
+        w.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND); w.setGravity(gravity);
         int width=Math.min(dp(widthDp),Math.max(dp(280),root.getWidth()-dp(40)));
         int height=heightDp<=0?ViewGroup.LayoutParams.WRAP_CONTENT:Math.min(dp(heightDp),Math.max(dp(200),root.getHeight()-dp(40)));
         w.setLayout(width,height);
@@ -114,20 +114,24 @@ public final class QuestCinemaController {
     /** "Reproductor VR": the options panel (replaces the old list of buttons). */
     public void showMenu() {
         if(pip || (dialog!=null && dialog.isShowing())) return;
+        showOptions(false);
+    }
+    private void showOptions(boolean more) {
         String subtitle=scenes()[scene]+" • "+VirtualScreen.modeNames(spanish)[format];
-        showPanel(QuestPanels.options(context,spanish,subtitle,brightness,eco,enabled,QuestHud.isClassic(context),new QuestPanels.OptionsActions(){
+        showPanel(QuestPanels.options(context,spanish,more,subtitle,brightness,eco,enabled,QuestHud.isClassic(context),new QuestPanels.OptionsActions(){
             public void scenes(){chooseScene();}
             public void screen(){screenMenu();}
             public void brightness(){choices(t("Brillo del escenario","Scenery brightness"),new String[]{"25%","50%","75%","100%"},new int[]{25,50,75,100},brightness,v->{brightness=v;apply();});}
-            public void toggleEco(){eco=!eco;apply();refreshMenu();}
+            public void toggleEco(){eco=!eco;apply();showOptions(true);}
             public void sponsor(){sponsorMenu();}
             public void dearrow(){dearrowMenu();}
             public void saveFavorite(){prefs.edit().putInt("favorite",scene).apply();toast(t("Favorito guardado","Favorite saved"));}
             public void openFavorite(){int favorite=prefs.getInt("favorite",-1);if(favorite>=0 && favorite<CinemaGeometry.COUNT){scene=favorite;enabled=true;apply();dismiss();}else toast(t("Primero guarda un escenario","Save a scenery first"));}
             public void toggleScenery(){enabled=!enabled;apply();dismiss();}
-            public void toggleClassic(){QuestHud.setClassic(context,!QuestHud.isClassic(context));refreshMenu();}
-            public void close(){dismiss();}
-        }),Gravity.TOP|Gravity.END,460,0);
+            public void toggleClassic(){QuestHud.setClassic(context,!QuestHud.isClassic(context));showOptions(true);}
+            public void more(){showOptions(true);}
+            public void close(){if(more)showOptions(false);else dismiss();}
+        }),Gravity.TOP|Gravity.END,420,0);
     }
     /** "Pantalla virtual": the settings panel; every control applies live and is saved in quest_cinema_v1. */
     private void screenMenu() {

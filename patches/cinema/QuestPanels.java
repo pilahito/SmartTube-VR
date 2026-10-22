@@ -27,39 +27,47 @@ final class QuestPanels {
 
     interface OptionsActions {
         void scenes(); void screen(); void brightness(); void toggleEco(); void sponsor(); void dearrow();
-        void saveFavorite(); void openFavorite(); void toggleScenery(); void toggleClassic(); void close();
+        void saveFavorite(); void openFavorite(); void toggleScenery(); void toggleClassic(); void more(); void close();
     }
 
-    static View options(Context c, boolean es, String subtitle, int brightness, boolean eco, boolean sceneryOn, boolean classic, OptionsActions a) {
+    /**
+     * "Reproductor VR" as in the mockup: three rows (video settings, scenery, more options). With {@code more}
+     * the same panel lists the remaining options (brightness, ECO, SponsorBlock, DeArrow, favorites...).
+     */
+    static View options(Context c, boolean es, boolean more, String subtitle, int brightness, boolean eco, boolean sceneryOn, boolean classic, OptionsActions a) {
         LinearLayout panel = QuestUi.glassPanel(c);
         LinearLayout head = new LinearLayout(c);
         head.setGravity(Gravity.CENTER_VERTICAL);
-        head.addView(new QuestUi.Icon(c, "monitor", Color.WHITE), new LinearLayout.LayoutParams(QuestUi.dp(c, 52), QuestUi.dp(c, 52)));
+        head.addView(new QuestUi.Icon(c, "monitor", Color.WHITE), new LinearLayout.LayoutParams(QuestUi.dp(c, 44), QuestUi.dp(c, 44)));
         LinearLayout titles = new LinearLayout(c);
         titles.setOrientation(LinearLayout.VERTICAL);
         titles.setPadding(QuestUi.dp(c, 12), 0, 0, 0);
-        titles.addView(QuestUi.label(c, es ? "Reproductor VR" : "VR Player", 22, Color.WHITE));
-        titles.addView(QuestUi.label(c, subtitle, 14, QuestUi.MUTED));
+        titles.addView(QuestUi.label(c, more ? (es ? "Más opciones" : "More options") : (es ? "Reproductor VR" : "VR Player"), 22, Color.WHITE));
+        titles.addView(QuestUi.label(c, subtitle, 13, QuestUi.MUTED));
         head.addView(titles, new LinearLayout.LayoutParams(0, -2, 1f));
         head.addView(closeButton(c, a::close), new LinearLayout.LayoutParams(QuestUi.dp(c, 44), QuestUi.dp(c, 44)));
         panel.addView(head);
         panel.addView(spacer(c, 10));
         panel.addView(QuestUi.divider(c));
         panel.addView(spacer(c, 12));
-        panel.addView(QuestUi.label(c, es ? "Opciones" : "Options", 17, Color.WHITE));
+        if (!more) panel.addView(QuestUi.label(c, es ? "Opciones" : "Options", 15, Color.WHITE));
         panel.addView(spacer(c, 4));
         String off = es ? "desactivado" : "off", on = es ? "activado" : "on";
-        row(c, panel, "scenes", es ? "Escenarios" : "Scenery", null, a::scenes, true);
-        row(c, panel, "screen_curved", es ? "Pantalla virtual" : "Virtual screen", null, a::screen, true);
-        row(c, panel, "sun", es ? "Brillo del escenario" : "Scenery brightness", brightness + "%", a::brightness, true);
-        row(c, panel, "bolt", "ECO", eco ? on : off, a::toggleEco, true);
-        row(c, panel, "skip", "SponsorBlock / AdStop", null, a::sponsor, true);
-        row(c, panel, "frame", es ? "DeArrow: títulos y miniaturas" : "DeArrow: titles and thumbnails", null, a::dearrow, true);
-        row(c, panel, "star", es ? "Guardar escenario favorito" : "Save favorite scenery", null, a::saveFavorite, true);
-        row(c, panel, "star", es ? "Abrir favorito" : "Open favorite", null, a::openFavorite, true);
-        row(c, panel, "gear", es ? "Controles de SmartTube" : "SmartTube controls", classic ? (es ? "clásicos" : "classic") : "VR", a::toggleClassic, true);
-        row(c, panel, "monitor", sceneryOn ? (es ? "Pantalla completa sin escenario" : "Fullscreen without scenery")
-                : (es ? "Activar escenario" : "Enable scenery"), null, a::toggleScenery, false);
+        if (!more) {
+            row(c, panel, "screen_curved", es ? "Ajustes de video" : "Video settings", null, a::screen, true);
+            row(c, panel, "scenes", es ? "Escenarios" : "Scenery", null, a::scenes, true);
+            row(c, panel, "gear", es ? "Más opciones" : "More options", null, a::more, false);
+        } else {
+            row(c, panel, "sun", es ? "Brillo del escenario" : "Scenery brightness", brightness + "%", a::brightness, true);
+            row(c, panel, "bolt", "ECO", eco ? on : off, a::toggleEco, true);
+            row(c, panel, "skip", "SponsorBlock / AdStop", null, a::sponsor, true);
+            row(c, panel, "frame", "DeArrow", null, a::dearrow, true);
+            row(c, panel, "star", es ? "Guardar escenario favorito" : "Save favorite scenery", null, a::saveFavorite, true);
+            row(c, panel, "star", es ? "Abrir favorito" : "Open favorite", null, a::openFavorite, true);
+            row(c, panel, "gear", es ? "Controles de SmartTube" : "SmartTube controls", classic ? (es ? "clásicos" : "classic") : "VR", a::toggleClassic, true);
+            row(c, panel, "monitor", sceneryOn ? (es ? "Pantalla completa sin escenario" : "Fullscreen without scenery")
+                    : (es ? "Activar escenario" : "Enable scenery"), null, a::toggleScenery, false);
+        }
         ScrollView scroll = new ScrollView(c);
         scroll.setFillViewport(true);
         scroll.addView(panel);
@@ -70,16 +78,16 @@ final class QuestPanels {
         LinearLayout r = new LinearLayout(c);
         r.setGravity(Gravity.CENTER_VERTICAL);
         r.setPadding(QuestUi.dp(c, 6), 0, QuestUi.dp(c, 10), 0);
-        r.setMinimumHeight(QuestUi.dp(c, 58));
+        r.setMinimumHeight(QuestUi.dp(c, 52));
         r.setBackground(QuestUi.stateBg(c, Color.TRANSPARENT, QuestUi.FILL_HOVER, 14, false));
         r.setFocusable(true);
         r.setClickable(true);
         r.setOnClickListener(v -> action.run());
-        r.addView(new QuestUi.Icon(c, icon, Color.WHITE), new LinearLayout.LayoutParams(QuestUi.dp(c, 40), QuestUi.dp(c, 40)));
-        TextView t = QuestUi.label(c, text, 18, Color.WHITE);
+        r.addView(new QuestUi.Icon(c, icon, Color.WHITE), new LinearLayout.LayoutParams(QuestUi.dp(c, 34), QuestUi.dp(c, 34)));
+        TextView t = QuestUi.label(c, text, 16, Color.WHITE);
         t.setPadding(QuestUi.dp(c, 12), 0, 0, 0);
         r.addView(t, new LinearLayout.LayoutParams(0, -2, 1f));
-        if (value != null) r.addView(QuestUi.label(c, value, 16, QuestUi.MUTED));
+        if (value != null) r.addView(QuestUi.label(c, value, 15, QuestUi.MUTED));
         r.addView(new QuestUi.Icon(c, "chevron", QuestUi.MUTED), new LinearLayout.LayoutParams(QuestUi.dp(c, 30), QuestUi.dp(c, 30)));
         list.addView(r, new LinearLayout.LayoutParams(-1, -2));
         if (divider) list.addView(QuestUi.divider(c));
