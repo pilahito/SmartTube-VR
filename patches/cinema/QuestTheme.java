@@ -31,9 +31,9 @@ final class QuestTheme {
         }
     }
 
+    /** Borders and the progress bar follow the scenery; sliders and selections stay blue, as in the mockups. */
     static void apply(int scene) {
         int[] c = colors(scene);
-        QuestUi.accent = c[0];
         QuestUi.border = c[1];
         QuestUi.progress = c[2];
     }

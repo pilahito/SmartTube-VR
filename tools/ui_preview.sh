@@ -88,19 +88,25 @@ adb shell input keyevent KEYCODE_DPAD_CENTER
 shot 02_hud_barra_y_pildora 3
 adb shell input keyevent KEYCODE_MENU
 shot 03_reproductor_vr 3
+tap_node text "Más opciones|More options" && shot 03b_mas_opciones 3
 tap_node text "Escenarios|Scenery" && shot 04_escenarios 3
 tap_node text "Cyberpunk" && shot 05_cyberpunk_elegido 3
 adb shell input keyevent KEYCODE_BACK; sleep 2
 adb shell input keyevent KEYCODE_DPAD_CENTER
 shot 06_hud_tema_cyberpunk 3
-adb shell input keyevent KEYCODE_MENU; sleep 2
-tap_node text "Ajustes de video|Video settings" && shot 07_pantalla_virtual 3
+# Gear of the HUD bar -> "Pantalla virtual"; if the bar is hidden, the same panel from "Más opciones".
+if ! tap_node content-desc "Pantalla virtual|Virtual screen"; then
+  adb shell input keyevent KEYCODE_MENU; sleep 2
+  tap_node text "Más opciones|More options"; sleep 2
+  tap_node text "Pantalla virtual|Virtual screen"
+fi
+shot 07_pantalla_virtual 3
 adb shell input keyevent KEYCODE_BACK; sleep 2
 adb shell input keyevent KEYCODE_MENU; sleep 2
-tap_node text "Más opciones|More options" && shot 07b_mas_opciones 3
+tap_node text "Ajustes de video|Video settings" && shot 07c_ajustes_video_smarttube 3
 adb shell input keyevent KEYCODE_BACK; sleep 2
 adb shell input keyevent KEYCODE_MENU; sleep 2
-tap_node text "Escenarios|Scenery" && sleep 2 && tap_node text "Playa tropical|Tropical beach"; sleep 2
+tap_node text "Más opciones|More options" && sleep 2 && tap_node text "Escenarios|Scenery" && sleep 2 && tap_node text "Playa tropical|Tropical beach"; sleep 2
 adb shell input keyevent KEYCODE_BACK; sleep 2
 adb shell input keyevent KEYCODE_DPAD_CENTER
 shot 08_hud_tema_oceano 3

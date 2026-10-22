@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Connect the VR player HUD (QuestHud, docs/interfaz/reproductor.jpg) to SmartTube's playback fragment.
 
-Must run after smarttube_cinema.py, which copies QuestHud/QuestTheme and the cinema controller.
-The HUD only reads the player through QuestHud.Host and sends play/next/seek/DeArrow back to it.
+Must run after smarttube_cinema.py, which copies QuestHud/QuestTheme and the cinema controller, and after
+smarttube_quest_media.py, which adds SponsorBlock's "undo skip" (shown as a chip in the HUD while it is visible).
+The HUD only reads the player through QuestHud.Host and sends play/next/seek/like/DeArrow back to it; quality and
+subtitles open SmartTube's own dialogs.
 SmartTube's own controls stay in place: they are hidden while the HUD is shown and come back when the user
 chooses "SmartTube controls: classic" in the player menu, or when the suggestions row is opened.
 All anchors are checked before any file is written.
@@ -13,6 +15,44 @@ from pathlib import Path
 PLAYBACK = 'smarttubetv/src/main/java/com/liskovsoft/smartyoutubetv2/tv/ui/playback'
 CINEMA_FILES = ('QuestHud.java', 'QuestTheme.java', 'QuestCinemaController.java')
 MANIFEST = 'smarttubetv/src/main/AndroidManifest.xml'
+COMMON = 'common/src/main/java/com/liskovsoft/smartyoutubetv2/common'
+SPONSOR = COMMON + '/app/models/playback/controllers/SponsorBlockController.java'
+UNDO_BUS = COMMON + '/misc/QuestUndoBus.java'
+UNDO_BUS_SOURCE = '''package com.liskovsoft.smartyoutubetv2.common.misc;
+
+/**
+ * SmartTube VR: hands SponsorBlock's "undo skip" to the VR HUD (tv module), which shows it as a chip in its
+ * control bar. The listener returns false when the HUD is hidden; SponsorBlock then shows its own dialog.
+ */
+public final class QuestUndoBus {
+    public interface Listener { boolean onUndoOffer(String label, long durationMs, Runnable undo); }
+
+    private static Listener sListener;
+
+    private QuestUndoBus() {}
+
+    public static void setListener(Listener listener) { sListener = listener; }
+
+    public static boolean offer(String label, long durationMs, Runnable undo) {
+        Listener listener = sListener;
+        return listener != null && listener.onUndoOffer(label, durationMs, undo);
+    }
+}
+'''
+
+UNDO_OLD = '''    private void showUndoSkip(List<SponsorSegment> segments, long undoPosMs, String category) {'''
+UNDO_NEW = UNDO_OLD + '''
+        if (com.liskovsoft.smartyoutubetv2.common.misc.QuestUndoBus.offer(category, UNDO_SKIP_MS, () -> {
+            if (mActiveSegments != null && segments != null) {
+                mActiveSegments.removeAll(segments);
+            }
+            if (getPlayer() != null) {
+                setPositionMs(undoPosMs);
+            }
+        })) {
+            return; // the VR HUD shows its own "Deshacer salto" chip
+        }
+'''
 HUD = 'com.liskovsoft.smartyoutubetv2.tv.ui.playback.cinema.QuestHud'
 
 PERMISSION_OLD = '    <uses-permission android:name="android.permission.INTERNET" />'
@@ -42,10 +82,45 @@ CREATE_NEW = '''        ProgressBarManager.setup(getProgressBarManager(), (ViewG
                     @Override public void seekTo(long positionMs) { setPositionMs(positionMs); }
                     @Override public String quality() {
                         FormatItem format = getVideoFormat();
-                        if (format == null) return "";
-                        int height = format.getHeight();
-                        String label = height >= 4320 ? "8K" : height >= 2160 ? "4K" : height >= 1440 ? "2K" : height > 0 ? height + "p" : "";
+                        String label = questResolution(format);
                         return !label.isEmpty() && format.getFrameRate() >= 49 ? label + Math.round(format.getFrameRate()) : label;
+                    }
+                    @Override public String videoSummary() {
+                        // "4K • 16:9 • 60 FPS", as in the "Reproductor VR" panel of the mockup.
+                        FormatItem format = getVideoFormat();
+                        String label = questResolution(format);
+                        if (label.isEmpty()) return "";
+                        StringBuilder text = new StringBuilder(label);
+                        if (format.getWidth() > 0 && format.getHeight() > 0) {
+                            float ratio = (float) format.getWidth() / format.getHeight();
+                            String aspect = Math.abs(ratio - 16 / 9f) < .05f ? "16:9" : Math.abs(ratio - 21 / 9f) < .08f ? "21:9"
+                                    : Math.abs(ratio - 4 / 3f) < .05f ? "4:3" : Math.abs(ratio - 32 / 9f) < .1f ? "32:9"
+                                    : String.format(java.util.Locale.US, "%%.2f:1", ratio);
+                            text.append(" \\u2022 ").append(aspect);
+                        }
+                        if (format.getFrameRate() > 0) text.append(" \\u2022 ").append(Math.round(format.getFrameRate())).append(" FPS");
+                        return text.toString();
+                    }
+                    @Override public String subtitleLabel() {
+                        FormatItem format = getSubtitleFormat();
+                        String lang = format != null && !FormatItem.SUBTITLE_NONE.equals(format) ? format.getLanguage() : null;
+                        if (lang == null || lang.isEmpty()) {
+                            return "es".equals(java.util.Locale.getDefault().getLanguage()) ? "Desactivados" : "Off";
+                        }
+                        String name = new java.util.Locale(lang.split("[-_]")[0]).getDisplayLanguage();
+                        return name.isEmpty() ? lang : name.substring(0, 1).toUpperCase() + name.substring(1);
+                    }
+                    @Override public void openVideoSettings() {
+                        mPlaybackPresenter.onButtonClicked(R.id.lb_control_high_quality, getButtonState(R.id.lb_control_high_quality));
+                    }
+                    @Override public void openSubtitles() {
+                        mPlaybackPresenter.onButtonLongClicked(R.id.lb_control_closed_captioning, getButtonState(R.id.lb_control_closed_captioning));
+                    }
+                    @Override public void openScreenSettings() { showCinemaScreen(); }
+                    @Override public void like() { mPlaybackPresenter.onButtonClicked(R.id.action_thumbs_up, getButtonState(R.id.action_thumbs_up)); }
+                    @Override public void dislike() { mPlaybackPresenter.onButtonClicked(R.id.action_thumbs_down, getButtonState(R.id.action_thumbs_down)); }
+                    @Override public void registerUndo(%(hud)s.UndoTarget target) {
+                        com.liskovsoft.smartyoutubetv2.common.misc.QuestUndoBus.setListener(target == null ? null : target::offer);
                     }
                     @Override public String likes() { Video video = getVideo(); return video != null ? video.likeCount : null; }
                     @Override public String dislikes() { Video video = getVideo(); return video != null ? video.dislikeCount : null; }
@@ -89,6 +164,12 @@ HIDE_NEW = '''        mIsControlsShownPreviously = false;
         return mQuestHud != null && isControlsOverlayVisible() && getPlayerRowIndex() == 0 && !%(hud)s.isClassic(getContext());
     }
 
+    /** "4K", "2K", "1080p"... of the playing video; empty when unknown. */
+    private static String questResolution(FormatItem format) {
+        int height = format != null ? format.getHeight() : 0;
+        return height >= 4320 ? "8K" : height >= 2160 ? "4K" : height >= 1440 ? "2K" : height > 0 ? height + "p" : "";
+    }
+
     private void updateQuestHud() {
         if (mQuestHud == null) return;
         boolean hud = isQuestHudActive();
@@ -126,6 +207,10 @@ FULLSCREEN_NEW = '''    public void toggleCinemaScenery() {
         if (mQuestCinema != null) mQuestCinema.toggleScenery();
     }
 
+    public void showCinemaScreen() {
+        if (mQuestCinema != null) mQuestCinema.showScreenSettings();
+    }
+
     public void setCinemaPip(boolean pip) {'''
 
 
@@ -138,6 +223,7 @@ def plan(root):
         ],
         play / 'mod/surface/SurfacePlaybackFragment.java': [(FULLSCREEN_OLD, FULLSCREEN_NEW)],
         root / MANIFEST: [(PERMISSION_OLD, PERMISSION_NEW)],
+        root / SPONSOR: [(UNDO_OLD, UNDO_NEW)],
     }
     planned = {}
     for path, replacements in changes.items():
@@ -147,6 +233,10 @@ def plan(root):
                 raise SystemExit(f'HUD patch anchor mismatch in {path}: {old[:70]!r}')
             content = content.replace(old, new, 1)
         planned[path] = content
+    bus = root / UNDO_BUS
+    if bus.exists():
+        raise SystemExit(f'HUD patch: {bus} already exists')
+    planned[bus] = UNDO_BUS_SOURCE
     return planned
 
 
@@ -156,6 +246,7 @@ def main(root):
             raise SystemExit(f'smarttube_cinema.py must run first: missing {name}')
     planned = plan(root)
     for path, content in planned.items():
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding='utf-8')
         print('HUD PATCHED', path)
 

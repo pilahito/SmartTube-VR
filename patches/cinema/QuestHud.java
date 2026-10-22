@@ -49,7 +49,27 @@ public final class QuestHud {
         void toggleFullscreen();
         /** Re-evaluates whether the HUD should be visible (controls shown, classic UI off...). */
         void syncVisibility();
+        /** "4K • 16:9 • 60 FPS" for the VR player panel; empty when unknown. */
+        String videoSummary();
+        /** Current subtitle language (e.g. "Español"), or the "off" label. */
+        String subtitleLabel();
+        void openVideoSettings();
+        void openSubtitles();
+        void openScreenSettings();
+        void like();
+        void dislike();
+        /** Makes the HUD (or nobody, with null) the place where SponsorBlock offers "Undo" after a skip. */
+        void registerUndo(UndoTarget target);
     }
+
+    /** Receives SponsorBlock's "Undo" offer; returns false to let SmartTube show its own dialog instead. */
+    public interface UndoTarget { boolean offer(String label, long durationMs, Runnable undo); }
+
+    // Bridges for the cinema controller's "Reproductor VR" panel (no-ops when no HUD is attached).
+    static String videoSummary() { return active != null ? active.host.videoSummary() : ""; }
+    static String subtitleLabel() { return active != null ? active.host.subtitleLabel() : null; }
+    static void openVideoSettings() { if (active != null) active.host.openVideoSettings(); }
+    static void openSubtitles() { if (active != null) active.host.openSubtitles(); }
 
     private static QuestHud active;
     private static final String PREFS = "quest_cinema_v1", CLASSIC = "classic_ui";
@@ -80,7 +100,11 @@ public final class QuestHud {
     private final View.OnLayoutChangeListener layoutListener;
     private final LinearLayout pill, bar;
     private final TextView device, wifiText, batteryText, time, quality, deArrow, likes, dislikes, rydNote, legend;
-    private final View sepDevice, sepWifi, legendDot, likesBox;
+    private final View sepDevice, sepWifi, legendDot, likesBox, metaLogo;
+    private final LinearLayout undoChip;
+    private final TextView undoText;
+    private Runnable undoAction;
+    private long undoUntil;
     private final QuestUi.Icon wifiIcon, batteryIcon, playIcon;
     private final SegmentBar seek;
     private boolean shown, released;
@@ -106,6 +130,10 @@ public final class QuestHud {
         pill.setGravity(Gravity.CENTER_VERTICAL);
         pill.setPadding(dp(18), dp(6), dp(8), dp(6));
         pill.setBackground(QuestUi.box(context, QuestUi.GLASS, 28, 1.5f, QuestUi.border));
+        metaLogo = new QuestUi.Icon(context, "meta", Color.WHITE);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(30), dp(26));
+        lp.rightMargin = dp(4);
+        pill.addView(metaLogo, lp);
         device = text("", 16, Color.WHITE);
         pill.addView(device);
         sepDevice = separator();
@@ -149,6 +177,24 @@ public final class QuestHud {
         row1.addView(time);
         View grow = new View(context);
         row1.addView(grow, new LinearLayout.LayoutParams(0, 1, 1f));
+        // "Deshacer salto 5s": shown for a few seconds after SponsorBlock skips a segment.
+        undoChip = new LinearLayout(context);
+        undoChip.setGravity(Gravity.CENTER_VERTICAL);
+        undoChip.setPadding(dp(12), dp(4), dp(18), dp(4));
+        undoChip.setBackground(QuestUi.stateBg(context, 0x14ffffff, QuestUi.FILL_HOVER, 16, true));
+        undoChip.setFocusable(true);
+        undoChip.setClickable(true);
+        undoChip.addView(new QuestUi.Icon(context, "undo", Color.WHITE), new LinearLayout.LayoutParams(dp(30), dp(30)));
+        undoText = text("", 14, Color.WHITE);
+        undoText.setPadding(dp(8), 0, 0, 0);
+        undoChip.addView(undoText);
+        undoChip.setOnClickListener(v -> {
+            Runnable undo = undoAction;
+            hideUndo();
+            if (undo != null) undo.run();
+        });
+        undoChip.setVisibility(View.GONE);
+        row1.addView(undoChip, new LinearLayout.LayoutParams(-2, dp(52)));
         quality = chip("", false, null);
         row1.addView(quality, chipParams());
         deArrow = chip("DeArrow", host.deArrowOn(), null);
@@ -162,11 +208,11 @@ public final class QuestHud {
         likesColumn.setPadding(dp(16), 0, 0, 0);
         LinearLayout counts = new LinearLayout(context);
         counts.setGravity(Gravity.CENTER_VERTICAL);
-        counts.addView(new QuestUi.Icon(context, "thumb_up", Color.WHITE), new LinearLayout.LayoutParams(dp(26), dp(26)));
+        counts.addView(iconButton(new QuestUi.Icon(context, "thumb_up", Color.WHITE), spanish ? "Me gusta" : "Like", host::like), new LinearLayout.LayoutParams(dp(30), dp(30)));
         likes = text("", 15, Color.WHITE);
         likes.setPadding(dp(4), 0, dp(12), 0);
         counts.addView(likes);
-        counts.addView(new QuestUi.Icon(context, "thumb_down", Color.WHITE), new LinearLayout.LayoutParams(dp(26), dp(26)));
+        counts.addView(iconButton(new QuestUi.Icon(context, "thumb_down", Color.WHITE), spanish ? "No me gusta" : "Dislike", host::dislike), new LinearLayout.LayoutParams(dp(30), dp(30)));
         dislikes = text("", 15, Color.WHITE);
         dislikes.setPadding(dp(4), 0, 0, 0);
         counts.addView(dislikes);
@@ -177,10 +223,12 @@ public final class QuestHud {
         bar.addView(row1, new LinearLayout.LayoutParams(-1, -2));
 
         seek = new SegmentBar(context);
-        bar.addView(seek, new LinearLayout.LayoutParams(-1, dp(30)));
+        bar.addView(seek, new LinearLayout.LayoutParams(-1, dp(40)));
 
         LinearLayout row3 = new LinearLayout(context);
         row3.setGravity(Gravity.CENTER_VERTICAL);
+        View lead = new View(context);
+        row3.addView(lead, new LinearLayout.LayoutParams(0, 1, 1.15f));
         legendDot = new View(context);
         legendDot.setBackground(QuestUi.box(context, 0xff7ac043, 6, 0, 0));
         row3.addView(legendDot, new LinearLayout.LayoutParams(dp(12), dp(12)));
@@ -188,10 +236,13 @@ public final class QuestHud {
         legend.setPadding(dp(8), 0, 0, 0);
         row3.addView(legend);
         View grow2 = new View(context);
-        row3.addView(grow2, new LinearLayout.LayoutParams(0, 1, 1f));
-        row3.addView(iconButton(new QuestUi.Icon(context, "gear", Color.WHITE), spanish ? "Ajustes" : "Settings", host::openOptions), new LinearLayout.LayoutParams(dp(40), dp(34)));
+        row3.addView(grow2, new LinearLayout.LayoutParams(0, 1, .55f));
+        row3.addView(iconButton(new QuestUi.Icon(context, "gear", Color.WHITE), spanish ? "Pantalla virtual" : "Virtual screen", host::openScreenSettings), new LinearLayout.LayoutParams(dp(40), dp(34)));
         row3.addView(iconButton(new QuestUi.Icon(context, "expand", Color.WHITE), spanish ? "Pantalla completa" : "Fullscreen", host::toggleFullscreen), new LinearLayout.LayoutParams(dp(40), dp(34)));
-        bar.addView(row3, new LinearLayout.LayoutParams(-1, -2));
+        // The SponsorBlock marks are drawn by the seek bar just under it; this row sits on that same line.
+        LinearLayout.LayoutParams r3 = new LinearLayout.LayoutParams(-1, dp(34));
+        r3.topMargin = -dp(22);
+        bar.addView(row3, r3);
 
         FrameLayout.LayoutParams barParams = new FrameLayout.LayoutParams(dp(900), -2, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
         barParams.bottomMargin = dp(28);
@@ -201,6 +252,7 @@ public final class QuestHud {
         pill.setVisibility(View.GONE);
         bar.setVisibility(View.GONE);
         setSegments(null);
+        host.registerUndo(this::offerUndo);
         // The pill's menu button replaces the cinema controller's "Escenarios" button.
         View opener = root.findViewWithTag(OPENER_TAG);
         if (opener != null) opener.setVisibility(View.GONE);
@@ -298,6 +350,7 @@ public final class QuestHud {
     public void release() {
         released = true;
         if (active == this) active = null;
+        host.registerUndo(null);
         handler.removeCallbacksAndMessages(null);
         root.removeOnLayoutChangeListener(layoutListener);
         root.removeView(pill);
@@ -320,7 +373,32 @@ public final class QuestHud {
         likes.setText(l == null ? "" : l);
         dislikes.setText(d == null ? "" : d);
         rydNote.setVisibility(d == null ? View.GONE : View.VISIBLE);
+        updateUndo();
         if (System.currentTimeMillis() - lastStatus > STATUS_MS) refreshStatus();
+    }
+
+    /** SponsorBlock skipped a segment: offer "Deshacer salto" in the bar while it is visible. */
+    private boolean offerUndo(String label, long durationMs, Runnable undo) {
+        if (released || !shown) return false; // not visible: SmartTube shows its own Undo dialog
+        undoAction = undo;
+        undoUntil = System.currentTimeMillis() + durationMs;
+        undoChip.setContentDescription(label);
+        undoChip.setVisibility(View.VISIBLE);
+        updateUndo();
+        return true;
+    }
+
+    private void updateUndo() {
+        if (undoChip.getVisibility() != View.VISIBLE) return;
+        long left = undoUntil - System.currentTimeMillis();
+        if (left <= 0) { hideUndo(); return; }
+        long seconds = (left + 999) / 1000;
+        undoText.setText((spanish ? "Deshacer salto" : "Undo skip") + "\n" + seconds + "s");
+    }
+
+    private void hideUndo() {
+        undoAction = null;
+        undoChip.setVisibility(View.GONE);
     }
 
     private static String fmt(long ms) {
@@ -333,7 +411,9 @@ public final class QuestHud {
     private void refreshStatus() {
         lastStatus = System.currentTimeMillis();
         String model = Build.MODEL == null ? "" : Build.MODEL;
-        device.setText(model.toLowerCase(Locale.US).contains("quest") ? (model.startsWith("Meta") ? model : "Meta " + model) : model);
+        boolean quest = model.toLowerCase(Locale.US).contains("quest");
+        device.setText(quest ? (model.startsWith("Meta") ? model : "Meta " + model) : model);
+        metaLogo.setVisibility(quest ? View.VISIBLE : View.GONE);
         int level = batteryPercent();
         batteryText.setText(level >= 0 ? level + "%" : "");
         batteryIcon.setLevel(Math.max(level, 0));
@@ -403,6 +483,12 @@ public final class QuestHud {
             paint.setColor(QuestUi.TRACK);
             rect.set(0, 0, w, trackH);
             g.drawRoundRect(rect, r, r, paint);
+            // Each SponsorBlock segment colors its stretch of the bar (sponsors yellow), as in the mockup.
+            for (float[] seg : segments) {
+                paint.setColor((int) seg[2] == 0 ? 0xffffd23f : (int) seg[2]);
+                rect.set(w * seg[0], 0, Math.max(w * seg[0] + trackH, w * seg[1]), trackH);
+                g.drawRoundRect(rect, r, r, paint);
+            }
             paint.setColor(QuestUi.progress);
             rect.set(0, 0, Math.max(trackH, w * progress), trackH);
             g.drawRoundRect(rect, r, r, paint);

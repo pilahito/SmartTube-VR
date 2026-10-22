@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.RectF;
 import android.graphics.drawable.ClipDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
@@ -266,6 +267,41 @@ final class QuestUi {
                     g.drawRect(cx - s * 1.2f, cy - s * .6f, cx + s * 1.0f, cy + s * .6f, stroke);
                     g.drawRect(cx + s * 1.0f, cy - s * .25f, cx + s * 1.25f, cy + s * .25f, fill);
                     g.drawRect(cx - s * 1.05f, cy - s * .45f, cx - s * 1.05f + (s * 1.9f) * level / 100f, cy + s * .45f, fill);
+                    break;
+                }
+                case "meta": {
+                    // Meta logo: an infinity loop.
+                    path.reset();
+                    path.moveTo(cx, cy);
+                    path.cubicTo(cx - s * .45f, cy - s * .9f, cx - s * 1.25f, cy - s * .7f, cx - s * 1.25f, cy);
+                    path.cubicTo(cx - s * 1.25f, cy + s * .7f, cx - s * .45f, cy + s * .9f, cx, cy);
+                    path.cubicTo(cx + s * .45f, cy - s * .9f, cx + s * 1.25f, cy - s * .7f, cx + s * 1.25f, cy);
+                    path.cubicTo(cx + s * 1.25f, cy + s * .7f, cx + s * .45f, cy + s * .9f, cx, cy);
+                    g.drawPath(path, stroke);
+                    break;
+                }
+                case "visor": {
+                    // VR headset seen from the front, inside a circle (like "Ajustes de video").
+                    g.drawCircle(cx, cy, s * 1.15f, stroke);
+                    RectF r = new RectF(cx - s * .8f, cy - s * .35f, cx + s * .8f, cy + s * .4f);
+                    g.drawRoundRect(r, s * .3f, s * .3f, fill);
+                    break;
+                }
+                case "subtitles": {
+                    g.drawCircle(cx, cy, s * 1.15f, stroke);
+                    g.drawLine(cx - s * .55f, cy - s * .15f, cx + s * .55f, cy - s * .15f, stroke);
+                    g.drawLine(cx - s * .55f, cy + s * .3f, cx + s * .2f, cy + s * .3f, stroke);
+                    break;
+                }
+                case "undo": {
+                    RectF r = new RectF(cx - s * .9f, cy - s * .8f, cx + s * .9f, cy + s);
+                    g.drawArc(r, 200, 250, false, stroke);
+                    path.reset();
+                    path.moveTo(cx - s * 1.15f, cy - s * .55f);
+                    path.lineTo(cx - s * .35f, cy - s * .55f);
+                    path.lineTo(cx - s * .85f, cy + s * .1f);
+                    path.close();
+                    g.drawPath(path, fill);
                     break;
                 }
                 default:

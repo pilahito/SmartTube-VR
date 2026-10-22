@@ -42,7 +42,7 @@ public final class QuestCinemaController {
     private Dialog dialog;
     private QuestPanels.ScenesPanel scenesPanel;
     private final boolean spanish;
-    private int scene, size, brightness, distance, format, curvature;
+    private int scene, size, brightness, distance, format, curvature, height;
     private boolean enabled, eco, pip, curved;
     public QuestCinemaController(FrameLayout root, View video, View subtitles, FormatApplier formatApplier) {
         this.formatApplier=formatApplier;
@@ -59,6 +59,7 @@ public final class QuestCinemaController {
         format=VirtualScreen.clampMode(prefs.getInt("format",VirtualScreen.FIT));
         curved=prefs.getBoolean("curved",false);
         curvature=VirtualScreen.clampCurvature(prefs.getInt("curvature",VirtualScreen.CURVATURE_DEFAULT));
+        height=VirtualScreen.clampHeight(prefs.getInt("height",0));
         enabled=prefs.getBoolean("enabled",true); eco=prefs.getBoolean("eco",false);
         scenery=new CinemaSceneView(context);
         root.addView(scenery,0,new FrameLayout.LayoutParams(-1,-1));
@@ -100,6 +101,7 @@ public final class QuestCinemaController {
         Dialog d=new Dialog(context);
         d.requestWindowFeature(Window.FEATURE_NO_TITLE);
         d.setContentView(content);
+        d.setCanceledOnTouchOutside(true);
         d.setOnDismissListener(x->{ if(dialog==d) { dialog=null; scenesPanel=null; } });
         dialog=d; d.show();
         Window w=d.getWindow();
@@ -117,8 +119,12 @@ public final class QuestCinemaController {
         showOptions(false);
     }
     private void showOptions(boolean more) {
-        String subtitle=scenes()[scene]+" • "+VirtualScreen.modeNames(spanish)[format];
-        showPanel(QuestPanels.options(context,spanish,more,subtitle,brightness,eco,enabled,QuestHud.isClassic(context),new QuestPanels.OptionsActions(){
+        // Header line as in the mockup ("4K • 16:9 • 60 FPS"); without video data, the scenery and format.
+        String subtitle=QuestHud.videoSummary();
+        if(subtitle==null || subtitle.isEmpty()) subtitle=scenes()[scene]+" • "+VirtualScreen.modeNames(spanish)[format];
+        showPanel(QuestPanels.options(context,spanish,more,subtitle,QuestHud.subtitleLabel(),brightness,eco,enabled,QuestHud.isClassic(context),new QuestPanels.OptionsActions(){
+            public void videoSettings(){if(QuestHud.isActive()){dismiss();QuestHud.openVideoSettings();}else screenMenu();}
+            public void subtitles(){dismiss();QuestHud.openSubtitles();}
             public void scenes(){chooseScene();}
             public void screen(){screenMenu();}
             public void brightness(){choices(t("Brillo del escenario","Scenery brightness"),new String[]{"25%","50%","75%","100%"},new int[]{25,50,75,100},brightness,v->{brightness=v;apply();});}
@@ -133,20 +139,22 @@ public final class QuestCinemaController {
             public void close(){if(more)showOptions(false);else dismiss();}
         }),Gravity.TOP|Gravity.END,420,0);
     }
+    /** Gear of the HUD: opens "Pantalla virtual" directly. */
+    public void showScreenSettings(){if(!pip)screenMenu();}
     /** "Pantalla virtual": the settings panel; every control applies live and is saved in quest_cinema_v1. */
     private void screenMenu() {
-        showPanel(new QuestPanels.ScreenPanel(context,spanish,curved,curvature,format,size,distance,new QuestPanels.ScreenListener(){
+        showPanel(new QuestPanels.ScreenPanel(context,spanish,curved,curvature,format,size,distance,height,new QuestPanels.ScreenListener(){
             public void curved(boolean on){QuestCinemaController.this.curved=on;enabled=true;apply();}
             public void curvature(int percent){curvature=VirtualScreen.clampCurvature(percent);apply();}
             public void format(int mode){format=VirtualScreen.clampMode(mode);applyFormat();apply();}
             public void size(int percent){size=VirtualScreen.clampSize(percent);enabled=true;apply();}
             public void distance(int meters){distance=VirtualScreen.clampDistance(meters);enabled=true;apply();}
+            public void height(int value){height=VirtualScreen.clampHeight(value);enabled=true;apply();}
             public void preset(int which){
                 int[] p=VirtualScreen.preset(which);
-                size=p[0];distance=p[1];curved=p[2]==1;curvature=p[3];format=p[4];enabled=true;applyFormat();apply();
+                size=p[0];distance=p[1];curved=p[2]==1;curvature=p[3];format=p[4];height=p[5];enabled=true;applyFormat();apply();
             }
-            public void close(){refreshMenu();}
-        }).view,Gravity.TOP|Gravity.END,480,0);
+        }).view,Gravity.TOP|Gravity.END,560,0);
     }
     /** Stores the format in SmartTube's own PlayerData (so its loader reapplies it) and applies it now. */
     private void applyFormat() {
@@ -199,7 +207,7 @@ public final class QuestCinemaController {
     private void apply() {
         QuestTheme.apply(scene);QuestHud.refreshTheme();
         prefs.edit().putInt("scene",scene).putInt("size",size).putInt("distance",distance).putInt("brightness",brightness).putInt("format",format).putBoolean("curved",curved)
-                .putInt("curvature",curvature).putBoolean("eco",eco).putBoolean("enabled",enabled).apply();
+                .putInt("curvature",curvature).putInt("height",height).putBoolean("eco",eco).putBoolean("enabled",enabled).apply();
         scenery.configure(scene,eco,brightness); scenery.setVisibility(enabled&&!pip?View.VISIBLE:View.GONE);
         applyLayout();
     }
@@ -209,12 +217,16 @@ public final class QuestCinemaController {
         float factor=enabled&&!pip?VirtualScreen.factor(size,distance):1f;
         FrameLayout.LayoutParams vp=new FrameLayout.LayoutParams(originalVideo);
         FrameLayout.LayoutParams sp=new FrameLayout.LayoutParams(originalSubtitles);
+        int[] rect=VirtualScreen.rect(root.getWidth(),root.getHeight(),size,distance,height);
         if(enabled&&!pip) {
-            vp.width=Math.round(root.getWidth()*factor);vp.height=Math.round(root.getHeight()*factor);vp.gravity=Gravity.CENTER;
-            sp.width=vp.width;sp.height=vp.height;sp.gravity=Gravity.CENTER;
+            // "Altura" moves the screen inside the free space: same rect for the video and the scenery frame.
+            vp.width=rect[2]-rect[0];vp.height=rect[3]-rect[1];vp.gravity=Gravity.TOP|Gravity.CENTER_HORIZONTAL;
+            vp.leftMargin=0;vp.rightMargin=0;vp.bottomMargin=0;vp.topMargin=rect[1];
+            sp.width=vp.width;sp.height=vp.height;sp.gravity=vp.gravity;
+            sp.leftMargin=0;sp.rightMargin=0;sp.bottomMargin=0;sp.topMargin=rect[1];
         }
         video.setLayoutParams(vp);subtitles.setLayoutParams(sp);
-        if(enabled&&!pip) scenery.setScreenFrame(VirtualScreen.rect(root.getWidth(),root.getHeight(),size,distance),curved,distance,curvature);
+        if(enabled&&!pip) scenery.setScreenFrame(rect,curved,distance,curvature);
         else scenery.setScreenFrame(null,false,distance);
         int p=Math.round(originalPadding*factor);subtitles.setPadding(p,subtitles.getPaddingTop(),p,subtitles.getPaddingBottom());
     }

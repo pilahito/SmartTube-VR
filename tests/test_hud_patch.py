@@ -23,6 +23,9 @@ class HudPatchTests(unittest.TestCase):
         manifest = root / hud.MANIFEST
         manifest.parent.mkdir(parents=True, exist_ok=True)
         manifest.write_text(hud.PERMISSION_OLD + '\n')
+        sponsor = root / hud.SPONSOR
+        sponsor.parent.mkdir(parents=True)
+        sponsor.write_text(hud.UNDO_OLD + '\n')
         if with_cinema:
             (play / 'cinema').mkdir()
             for name in hud.CINEMA_FILES:
@@ -42,6 +45,11 @@ class HudPatchTests(unittest.TestCase):
             self.assertIn('mQuestHud.release()', text)
             self.assertIn('toggleCinemaScenery', surface.read_text())
             self.assertIn('ACCESS_WIFI_STATE', manifest.read_text())
+            self.assertIn('showCinemaScreen', surface.read_text())
+            self.assertIn('QuestUndoBus.setListener', text)
+            self.assertIn('R.id.lb_control_high_quality', text)
+            self.assertIn('QuestUndoBus.offer(category, UNDO_SKIP_MS', (root / hud.SPONSOR).read_text())
+            self.assertIn('class QuestUndoBus', (root / hud.UNDO_BUS).read_text())
 
     def test_needs_the_cinema_patch_first(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -62,6 +70,7 @@ class HudPatchTests(unittest.TestCase):
                 hud.main(root)
             self.assertEqual(fragment.read_bytes(), before)
             self.assertEqual(surface.read_text(), hud.FULLSCREEN_OLD + '\n')
+            self.assertFalse((root / hud.UNDO_BUS).exists())
 
     def test_second_apply_is_rejected_without_writing(self):
         with tempfile.TemporaryDirectory() as folder:

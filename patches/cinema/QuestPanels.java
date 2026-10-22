@@ -26,15 +26,17 @@ final class QuestPanels {
     // ------------------------------------------------------------------ Reproductor VR (opciones)
 
     interface OptionsActions {
+        void videoSettings(); void subtitles();
         void scenes(); void screen(); void brightness(); void toggleEco(); void sponsor(); void dearrow();
         void saveFavorite(); void openFavorite(); void toggleScenery(); void toggleClassic(); void more(); void close();
     }
 
     /**
-     * "Reproductor VR" as in the mockup: three rows (video settings, scenery, more options). With {@code more}
-     * the same panel lists the remaining options (brightness, ECO, SponsorBlock, DeArrow, favorites...).
+     * "Reproductor VR" as in the mockup: three rows (video settings, subtitles, more options). With {@code more}
+     * the same panel lists the rest (virtual screen, scenery, brightness, ECO, SponsorBlock, DeArrow, favorites...).
+     * {@code subtitleValue} is the current subtitle language; null hides the row (no SmartTube player behind).
      */
-    static View options(Context c, boolean es, boolean more, String subtitle, int brightness, boolean eco, boolean sceneryOn, boolean classic, OptionsActions a) {
+    static View options(Context c, boolean es, boolean more, String subtitle, String subtitleValue, int brightness, boolean eco, boolean sceneryOn, boolean classic, OptionsActions a) {
         LinearLayout panel = QuestUi.glassPanel(c);
         LinearLayout head = new LinearLayout(c);
         head.setGravity(Gravity.CENTER_VERTICAL);
@@ -54,10 +56,12 @@ final class QuestPanels {
         panel.addView(spacer(c, 4));
         String off = es ? "desactivado" : "off", on = es ? "activado" : "on";
         if (!more) {
-            row(c, panel, "screen_curved", es ? "Ajustes de video" : "Video settings", null, a::screen, true);
-            row(c, panel, "scenes", es ? "Escenarios" : "Scenery", null, a::scenes, true);
+            row(c, panel, "visor", es ? "Ajustes de video" : "Video settings", null, a::videoSettings, true);
+            if (subtitleValue != null) row(c, panel, "subtitles", es ? "Subtítulos" : "Subtitles", subtitleValue, a::subtitles, true);
             row(c, panel, "gear", es ? "Más opciones" : "More options", null, a::more, false);
         } else {
+            row(c, panel, "screen_curved", es ? "Pantalla virtual" : "Virtual screen", null, a::screen, true);
+            row(c, panel, "scenes", es ? "Escenarios" : "Scenery", null, a::scenes, true);
             row(c, panel, "sun", es ? "Brillo del escenario" : "Scenery brightness", brightness + "%", a::brightness, true);
             row(c, panel, "bolt", "ECO", eco ? on : off, a::toggleEco, true);
             row(c, panel, "skip", "SponsorBlock / AdStop", null, a::sponsor, true);
@@ -198,71 +202,73 @@ final class QuestPanels {
 
     interface ScreenListener {
         void curved(boolean on); void curvature(int percent); void format(int mode);
-        void size(int percent); void distance(int meters); void preset(int which); void close();
+        void size(int percent); void distance(int meters); void height(int value); void preset(int which);
     }
+
+    /** Format chips of the panel, in the mockup's order ("Rellenar" stays in SmartTube's own aspect menu). */
+    static final int[] PANEL_FORMATS = {VirtualScreen.R21_9, VirtualScreen.R16_9, VirtualScreen.R32_9, VirtualScreen.R4_3, VirtualScreen.FIT};
 
     static final class ScreenPanel {
         final View view;
-        private final TextView curvedBtn, flatBtn;
+        private final View curvedBtn, flatBtn;
         private final TextView[] formatChips = new TextView[VirtualScreen.MODE_COUNT];
-        private final SeekBar curvature, size, distance;
-        private final TextView curvatureValue, sizeValue, distanceValue;
+        private final SeekBar curvature, size, distance, height;
+        private final TextView sizeValue, distanceValue;
 
-        ScreenPanel(Context c, boolean es, boolean curved, int curv, int format, int sizePct, int dist, ScreenListener l) {
+        ScreenPanel(Context c, boolean es, boolean curved, int curv, int format, int sizePct, int dist, int heightValue, ScreenListener l) {
             LinearLayout panel = QuestUi.glassPanel(c);
-            LinearLayout head = new LinearLayout(c);
-            head.setGravity(Gravity.CENTER_VERTICAL);
-            head.addView(QuestUi.label(c, es ? "Pantalla virtual" : "Virtual screen", 26, Color.WHITE), new LinearLayout.LayoutParams(0, -2, 1f));
-            head.addView(closeButton(c, l::close), new LinearLayout.LayoutParams(QuestUi.dp(c, 44), QuestUi.dp(c, 44)));
-            panel.addView(head);
-            panel.addView(spacer(c, 10));
+            panel.setPadding(QuestUi.dp(c, 26), QuestUi.dp(c, 22), QuestUi.dp(c, 26), QuestUi.dp(c, 22));
+            panel.addView(QuestUi.label(c, es ? "Pantalla virtual" : "Virtual screen", 30, Color.WHITE));
+            panel.addView(spacer(c, 14));
 
             LinearLayout shape = new LinearLayout(c);
             curvedBtn = shapeButton(c, es ? "Curva" : "Curved", "screen_curved", () -> { l.curved(true); setCurved(true); });
             flatBtn = shapeButton(c, es ? "Plana" : "Flat", "screen_flat", () -> { l.curved(false); setCurved(false); });
-            shape.addView(curvedBtn, weight(c, 0, 4));
-            shape.addView(flatBtn, weight(c, 0, 4));
-            panel.addView(shape, new LinearLayout.LayoutParams(-1, QuestUi.dp(c, 58)));
-            panel.addView(spacer(c, 10));
+            shape.addView(curvedBtn, weight(c, 1f, 4));
+            shape.addView(flatBtn, weight(c, 1f, 4));
+            panel.addView(shape, new LinearLayout.LayoutParams(-1, QuestUi.dp(c, 60)));
+            panel.addView(spacer(c, 12));
 
-            curvatureValue = QuestUi.label(c, "", 16, Color.WHITE);
-            curvature = sliderRow(c, panel, es ? "Curvatura" : "Curvature", curvatureValue,
-                    VirtualScreen.CURVATURE_MAX - VirtualScreen.CURVATURE_MIN, VirtualScreen.clampCurvature(curv) - VirtualScreen.CURVATURE_MIN, v -> {
-                        int pct = v + VirtualScreen.CURVATURE_MIN; curvatureValue.setText(pct + "%"); l.curvature(pct); });
-            curvatureValue.setText(VirtualScreen.clampCurvature(curv) + "%");
+            // Curvature has no number in the mockup: the slider alone.
+            curvature = sliderRow(c, panel, es ? "Curvatura" : "Curvature", null,
+                    VirtualScreen.CURVATURE_MAX - VirtualScreen.CURVATURE_MIN, VirtualScreen.clampCurvature(curv) - VirtualScreen.CURVATURE_MIN,
+                    v -> l.curvature(v + VirtualScreen.CURVATURE_MIN));
 
-            panel.addView(QuestUi.label(c, es ? "Formato" : "Format", 17, Color.WHITE));
+            panel.addView(QuestUi.label(c, es ? "Formato" : "Format", 18, Color.WHITE));
+            panel.addView(spacer(c, 4));
             String[] names = VirtualScreen.modeNames(es);
-            // Same order as the mockup: ultrawide first, then the usual ratios and "fit".
-            int[] order = {VirtualScreen.R21_9, VirtualScreen.R16_9, VirtualScreen.R32_9, VirtualScreen.R4_3, VirtualScreen.FIT, VirtualScreen.FILL};
-            LinearLayout chips1 = new LinearLayout(c), chips2 = new LinearLayout(c);
-            for (int i = 0; i < order.length; i++) {
-                final int mode = order[i];
-                String label = mode == VirtualScreen.FILL ? (es ? "Rellenar" : "Fill") : names[mode];
-                formatChips[mode] = QuestUi.chip(c, label, mode == format, () -> { l.format(mode); setFormat(mode); });
-                (i < 3 ? chips1 : chips2).addView(formatChips[mode], weight(c, 0, 3));
+            LinearLayout chips = new LinearLayout(c);
+            for (int mode : PANEL_FORMATS) {
+                final int m = mode;
+                boolean wide = mode == VirtualScreen.R21_9;
+                String label = wide ? names[mode] + "  " + (es ? "Ultrapanorámica" : "Ultrawide") : names[mode];
+                formatChips[mode] = QuestUi.chip(c, label, mode == format, () -> { l.format(m); setFormat(m); });
+                chips.addView(formatChips[mode], weight(c, wide ? 2.4f : 1f, 3));
             }
-            panel.addView(chips1, new LinearLayout.LayoutParams(-1, -2));
-            panel.addView(chips2, new LinearLayout.LayoutParams(-1, -2));
-            panel.addView(spacer(c, 8));
+            panel.addView(chips, new LinearLayout.LayoutParams(-1, QuestUi.dp(c, 46)));
+            panel.addView(spacer(c, 12));
 
-            sizeValue = QuestUi.label(c, "", 16, Color.WHITE);
+            sizeValue = QuestUi.label(c, "", 16, QuestUi.MUTED);
             size = sliderRow(c, panel, es ? "Tamaño" : "Size", sizeValue, 10, (VirtualScreen.clampSize(sizePct) - 50) / 5, v -> {
                 int pct = 50 + v * 5; sizeValue.setText(pct + " %"); l.size(pct); });
             sizeValue.setText(VirtualScreen.clampSize(sizePct) + " %");
-            distanceValue = QuestUi.label(c, "", 16, Color.WHITE);
+            distanceValue = QuestUi.label(c, "", 16, QuestUi.MUTED);
             distance = sliderRow(c, panel, es ? "Distancia" : "Distance", distanceValue, 3, VirtualScreen.clampDistance(dist) - 2, v -> {
                 int m = 2 + v; distanceValue.setText(m + " m"); l.distance(m); });
             distanceValue.setText(VirtualScreen.clampDistance(dist) + " m");
+            height = sliderRow(c, panel, es ? "Altura" : "Height", null,
+                    VirtualScreen.HEIGHT_MAX - VirtualScreen.HEIGHT_MIN, VirtualScreen.clampHeight(heightValue) - VirtualScreen.HEIGHT_MIN,
+                    v -> l.height(v + VirtualScreen.HEIGHT_MIN));
 
+            panel.addView(QuestUi.label(c, es ? "Preajustes" : "Presets", 18, Color.WHITE));
+            panel.addView(spacer(c, 4));
             LinearLayout presets = new LinearLayout(c);
             String[] pn = VirtualScreen.presetNames(es);
             for (int i = 0; i < VirtualScreen.PRESET_COUNT; i++) {
                 final int which = i;
-                presets.addView(QuestUi.chip(c, pn[i], false, () -> { l.preset(which); applyPreset(which); }), weight(c, 0, 3));
+                presets.addView(QuestUi.chip(c, pn[i], false, () -> { l.preset(which); applyPreset(which); }), weight(c, 1f, 3));
             }
-            panel.addView(spacer(c, 6));
-            panel.addView(presets, new LinearLayout.LayoutParams(-1, -2));
+            panel.addView(presets, new LinearLayout.LayoutParams(-1, QuestUi.dp(c, 46)));
             ScrollView scroll = new ScrollView(c);
             scroll.setFillViewport(true);
             scroll.addView(panel);
@@ -271,27 +277,35 @@ final class QuestPanels {
             setFormat(format);
         }
 
-        private static LinearLayout.LayoutParams weight(Context c, int w, int marginDp) {
-            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(w, -1, 1f);
+        private static LinearLayout.LayoutParams weight(Context c, float w, int marginDp) {
+            LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, -1, w);
             p.setMargins(QuestUi.dp(c, marginDp), QuestUi.dp(c, 2), QuestUi.dp(c, marginDp), QuestUi.dp(c, 2));
             return p;
         }
 
-        private static TextView shapeButton(Context c, String text, String icon, Runnable onClick) {
-            TextView t = QuestUi.chip(c, "   " + text, false, onClick);
-            t.setTextSize(18);
-            t.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
-            t.setPadding(QuestUi.dp(c, 54), 0, QuestUi.dp(c, 10), 0);
-            return t;
+        /** Big "Curva" / "Plana" button: icon + text; selecting the row also selects (tints) its children. */
+        private static View shapeButton(Context c, String text, String icon, Runnable onClick) {
+            LinearLayout b = new LinearLayout(c);
+            b.setGravity(Gravity.CENTER);
+            b.setBackground(QuestUi.stateBg(c, QuestUi.FILL, QuestUi.FILL_HOVER, 14, true));
+            b.setFocusable(true);
+            b.setClickable(true);
+            b.setContentDescription(text);
+            b.setOnClickListener(v -> onClick.run());
+            b.addView(new QuestUi.Icon(c, icon, Color.WHITE), new LinearLayout.LayoutParams(QuestUi.dp(c, 40), QuestUi.dp(c, 40)));
+            TextView t = QuestUi.label(c, text, 18, Color.WHITE);
+            t.setPadding(QuestUi.dp(c, 10), 0, 0, 0);
+            b.addView(t);
+            return b;
         }
 
         private static SeekBar sliderRow(Context c, LinearLayout parent, String name, TextView value, int max, int progress, QuestUi.IntListener l) {
             LinearLayout line = new LinearLayout(c);
-            line.addView(QuestUi.label(c, name, 17, Color.WHITE), new LinearLayout.LayoutParams(0, -2, 1f));
-            line.addView(value);
+            line.addView(QuestUi.label(c, name, 18, Color.WHITE), new LinearLayout.LayoutParams(0, -2, 1f));
+            if (value != null) line.addView(value);
             parent.addView(line, new LinearLayout.LayoutParams(-1, -2));
             SeekBar bar = QuestUi.slider(c, max, progress, QuestUi.accent, 5, 20, l);
-            parent.addView(bar, new LinearLayout.LayoutParams(-1, QuestUi.dp(c, 30)));
+            parent.addView(bar, new LinearLayout.LayoutParams(-1, QuestUi.dp(c, 32)));
             return bar;
         }
 
@@ -304,7 +318,8 @@ final class QuestPanels {
             int[] p = VirtualScreen.preset(which);
             size.setProgress((p[0] - 50) / 5); sizeValue.setText(p[0] + " %");
             distance.setProgress(p[1] - 2); distanceValue.setText(p[1] + " m");
-            curvature.setProgress(p[3] - VirtualScreen.CURVATURE_MIN); curvatureValue.setText(p[3] + "%");
+            curvature.setProgress(p[3] - VirtualScreen.CURVATURE_MIN);
+            height.setProgress(p[5] - VirtualScreen.HEIGHT_MIN);
             setCurved(p[2] == 1); setFormat(p[4]);
         }
     }

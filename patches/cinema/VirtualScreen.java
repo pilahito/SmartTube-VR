@@ -39,9 +39,17 @@ public final class VirtualScreen {
     }
     /** Screen rectangle {left, top, right, bottom} centred in a panel of w x h. */
     public static int[] rect(int w, int h, int size, int distance) {
+        return rect(w, h, size, distance, 0);
+    }
+    // "Altura": -100 (screen at the bottom of the free space) .. 0 (centred) .. 100 (at the top).
+    public static final int HEIGHT_MIN = -100, HEIGHT_MAX = 100;
+    public static int clampHeight(int h) { return Math.max(HEIGHT_MIN, Math.min(HEIGHT_MAX, h)); }
+    /** Like {@link #rect(int, int, int, int)} but moved up or down inside the free space by {@code height}. */
+    public static int[] rect(int w, int h, int size, int distance, int height) {
         float f = factor(size, distance);
         int sw = Math.round(w * f), sh = Math.round(h * f);
-        int l = (w - sw) / 2, t = (h - sh) / 2;
+        int l = (w - sw) / 2, free = (h - sh) / 2;
+        int t = free - Math.round(free * clampHeight(height) / 100f);
         return new int[]{l, t, l + sw, t + sh};
     }
     /** Vertical bulge (px) of the decorative curved frame: grows when the screen is closer. */
@@ -54,16 +62,17 @@ public final class VirtualScreen {
     public static float curveDepth(int screenHeight, int distance, int curvaturePercent) {
         return curveDepth(screenHeight, distance) * clampCurvature(curvaturePercent) / 100f;
     }
-    // Presets of the "Pantalla virtual" panel: {size %, distance m, curved (0/1), curvature %, format mode}.
-    public static final int PRESET_CINEMA = 0, PRESET_DESK = 1, PRESET_COMPACT = 2, PRESET_COUNT = 3;
+    // Presets of the "Pantalla virtual" panel: {size %, distance m, curved (0/1), curvature %, format mode, height}.
+    // "Tumbado (techo)" puts a big screen at the top of the panel, for watching while lying down.
+    public static final int PRESET_CINEMA = 0, PRESET_LYING = 1, PRESET_DESK = 2, PRESET_COUNT = 3;
     public static int[] preset(int which) {
         switch (which) {
-            case PRESET_DESK: return new int[]{80, 2, 0, CURVATURE_DEFAULT, FIT};
-            case PRESET_COMPACT: return new int[]{60, 4, 0, CURVATURE_DEFAULT, FIT};
-            default: return new int[]{100, 3, 1, CURVATURE_DEFAULT, FIT};
+            case PRESET_LYING: return new int[]{90, 2, 1, CURVATURE_DEFAULT, FIT, 100};
+            case PRESET_DESK: return new int[]{80, 2, 0, CURVATURE_DEFAULT, FIT, 0};
+            default: return new int[]{100, 3, 1, CURVATURE_DEFAULT, FIT, 0};
         }
     }
-    private static final String[] PRESETS_ES = {"Cine", "Escritorio", "Compacta"};
-    private static final String[] PRESETS_EN = {"Cinema", "Desk", "Compact"};
+    private static final String[] PRESETS_ES = {"Cine", "Tumbado (techo)", "Escritorio"};
+    private static final String[] PRESETS_EN = {"Cinema", "Lying down (ceiling)", "Desk"};
     public static String[] presetNames(boolean spanish) { return (spanish ? PRESETS_ES : PRESETS_EN).clone(); }
 }
