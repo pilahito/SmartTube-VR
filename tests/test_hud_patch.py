@@ -21,7 +21,7 @@ class HudPatchTests(unittest.TestCase):
         surface.parent.mkdir(parents=True)
         surface.write_text(hud.FULLSCREEN_OLD + '\n')
         manifest = root / hud.MANIFEST
-        manifest.parent.mkdir(parents=True)
+        manifest.parent.mkdir(parents=True, exist_ok=True)
         manifest.write_text(hud.PERMISSION_OLD + '\n')
         if with_cinema:
             (play / 'cinema').mkdir()
