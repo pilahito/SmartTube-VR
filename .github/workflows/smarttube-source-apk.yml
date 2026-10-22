@@ -293,7 +293,7 @@ jobs:
           api-level: 30
           arch: x86_64
           target: google_apis
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -change-locale es-ES
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin 1920x1080 -change-locale es-ES
           disable-animations: true
           script: bash enhancements/tools/ui_preview.sh apk "${{ inputs.preview_video }}" preview
       - name: Upload screenshots and video
