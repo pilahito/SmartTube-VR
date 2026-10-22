@@ -34,7 +34,9 @@ class CinemaPatchTests(unittest.TestCase):
             cinema.main(root)
             self.assertIn('mQuestCinema.release()', surface.read_text())
             self.assertIn('setCinemaPip(isInPictureInPictureMode)', activity.read_text())
-            self.assertEqual(len(list((root / cinema.PACKAGE / 'cinema').glob('*.java'))), 4)
+            sources = {p.name for p in (root / cinema.PACKAGE / 'cinema').glob('*.java')}
+            self.assertTrue({'QuestUi.java', 'QuestPanels.java', 'QuestCinemaController.java'} <= sources)
+            self.assertEqual(len(list((root / cinema.ASSETS).glob('scene_*.jpg'))), cinema.SCENE_IMAGES)
             text = surface.read_text()
             self.assertIn('setResize(resize); setAspect(aspect);', text)
 
@@ -48,6 +50,7 @@ class CinemaPatchTests(unittest.TestCase):
                 cinema.main(root)
             self.assertEqual(surface.read_bytes(), before)
             self.assertFalse((root / cinema.PACKAGE / 'cinema').exists())
+            self.assertFalse((root / cinema.ASSETS).exists())
 
     def test_second_apply_is_rejected_without_writing(self):
         with tempfile.TemporaryDirectory() as folder:

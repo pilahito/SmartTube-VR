@@ -70,6 +70,16 @@ jobs:
         run: python3 -m unittest discover -s enhancements/tests -v
         env:
           PYTHONPATH: enhancements
+      - name: Compile the Quest panels against the real Android API
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          mkdir -p /tmp/panels
+          javac --release 8 -Xlint:-options -d /tmp/panels -cp "$SDK_ROOT/platforms/android-35/android.jar" \
+            enhancements/patches/cinema/CinemaGeometry.java enhancements/patches/cinema/VirtualScreen.java \
+            enhancements/patches/cinema/CinemaSceneView.java enhancements/patches/cinema/QuestUi.java \
+            enhancements/patches/cinema/QuestPanels.java
       - name: Check scenery meshes, perspective and ECO budgets
         shell: bash
         run: |

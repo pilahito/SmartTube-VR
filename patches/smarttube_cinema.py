@@ -8,6 +8,9 @@ import argparse
 from pathlib import Path
 
 PACKAGE = 'smarttubetv/src/main/java/com/liskovsoft/smartyoutubetv2/tv/ui/playback'
+# Scenery thumbnails used by the "Escenarios" grid; read from assets/vr_scenes/scene_NN.jpg at runtime.
+ASSETS = 'smarttubetv/src/main/assets/vr_scenes'
+SCENE_IMAGES = 16
 
 
 def main(root):
@@ -55,17 +58,34 @@ def main(root):
                 raise SystemExit(f'Cinema patch anchor mismatch in {path}: {old[:70]!r}')
             content = content.replace(old, new, 1)
         planned[path] = content
-    for source in sorted((Path(__file__).parent / 'cinema').glob('*.java')):
+    sources = sorted((Path(__file__).parent / 'cinema').glob('*.java'))
+    names = {source.name for source in sources}
+    required = {'CinemaGeometry.java', 'CinemaSceneView.java', 'QuestCinemaController.java', 'VirtualScreen.java',
+                'QuestUi.java', 'QuestPanels.java'}
+    if not required <= names:
+        raise SystemExit(f'Missing cinema Java sources: {sorted(required - names)}')
+    for source in sources:
         target = root / PACKAGE / 'cinema' / source.name
         if target.exists():
             raise SystemExit(f'Refusing to overwrite existing cinema source: {target}')
         planned[target] = source.read_text(encoding='utf-8')
-    if len(planned) != 6:
-        raise SystemExit('Expected all four cinema Java sources')
+    images = sorted((Path(__file__).parent / 'cinema' / 'assets').glob('scene_*.jpg'))
+    if len(images) != SCENE_IMAGES:
+        raise SystemExit(f'Expected {SCENE_IMAGES} scenery thumbnails, found {len(images)}')
+    binaries = {}
+    for image in images:
+        target = root / ASSETS / image.name
+        if target.exists():
+            raise SystemExit(f'Refusing to overwrite existing scenery thumbnail: {target}')
+        binaries[target] = image.read_bytes()
     for path, content in planned.items():
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding='utf-8')
         print('CINEMA PATCHED', path)
+    for path, data in binaries.items():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+    print(f'CINEMA ASSETS {len(binaries)} scenery thumbnails -> {ASSETS}')
 
 
 if __name__ == '__main__':

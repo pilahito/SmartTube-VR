@@ -19,6 +19,19 @@ public class VirtualScreenTest {
         int[] r = VirtualScreen.rect(1000, 600, 50, 3);
         check(r[0] == 250 && r[1] == 150 && r[2] == 750 && r[3] == 450, "centred rect");
         check(VirtualScreen.curveDepth(400, 2) > VirtualScreen.curveDepth(400, 5), "closer bends more");
+        // 32:9 ultrawide and the curvature slider of the "Pantalla virtual" panel
+        check(VirtualScreen.MODE_COUNT == 6 && "32:9".equals(VirtualScreen.modeNames(false)[VirtualScreen.R32_9]), "32:9 mode");
+        check(VirtualScreen.aspect(VirtualScreen.R32_9) == 3.56f && VirtualScreen.resizeMode(VirtualScreen.R32_9) == VirtualScreen.RESIZE_FIT, "32:9 letterbox");
+        check(VirtualScreen.clampCurvature(0) == VirtualScreen.CURVATURE_MIN && VirtualScreen.clampCurvature(999) == VirtualScreen.CURVATURE_MAX, "curvature clamp");
+        check(VirtualScreen.curveDepth(400, 3, 100) == VirtualScreen.curveDepth(400, 3), "100% is the original bulge");
+        check(VirtualScreen.curveDepth(400, 3, 150) > VirtualScreen.curveDepth(400, 3, 50), "more curvature bends more");
+        for (int i = 0; i < VirtualScreen.PRESET_COUNT; i++) {
+            int[] p = VirtualScreen.preset(i);
+            check(p.length == 5 && p[0] == VirtualScreen.clampSize(p[0]) && p[1] == VirtualScreen.clampDistance(p[1])
+                    && p[3] == VirtualScreen.clampCurvature(p[3]) && p[4] == VirtualScreen.clampMode(p[4]), "preset in range " + i);
+            check((p[0] - 50) % 5 == 0, "preset size matches the 5% slider step " + i);
+        }
+        check(VirtualScreen.presetNames(true).length == VirtualScreen.PRESET_COUNT && VirtualScreen.presetNames(false).length == VirtualScreen.PRESET_COUNT, "preset names");
         System.out.println("VirtualScreenTest OK");
     }
 }
