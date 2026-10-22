@@ -26,14 +26,18 @@ wait_boot
 echo "Idioma: $(adb shell getprop persist.sys.locale | tr -d '\r')"
 adb install -r -g "$APK" || { echo "install failed"; exit 1; }
 
-# Landscape 1280x720 dp, like the Quest 2D panel.
-landscape() {
-  adb shell settings put system accelerometer_rotation 0
-  adb shell settings put system user_rotation 1
-  adb shell cmd window user-rotation lock 1 >/dev/null 2>&1 || adb shell wm user-rotation lock 1 >/dev/null 2>&1 || true
-}
-landscape
-echo "Pantalla: $(adb shell wm size | tr -d '\r' | tr '\n' ' ') rotación: $(adb shell dumpsys input | grep -m1 -o 'SurfaceOrientation: [0-9]' )"
+# The Android TV image is landscape by nature (1920x1080, like the Quest 2D panel): keep its natural
+# orientation. Rotating it (user_rotation 1) is what turned earlier previews portrait.
+adb shell settings put system accelerometer_rotation 0
+adb shell settings put system user_rotation 0
+# -change-locale is not applied on the TV image: set Spanish as root and restart the framework.
+if [ "$(adb shell getprop persist.sys.locale | tr -d '\r')" != "es-ES" ]; then
+  adb root >/dev/null 2>&1; sleep 3; adb wait-for-device
+  adb shell "setprop persist.sys.locale es-ES; setprop ctl.restart zygote" >/dev/null 2>&1 || true
+  sleep 15; wait_boot; sleep 10
+  echo "Idioma tras reiniciar: $(adb shell getprop persist.sys.locale | tr -d '\r')"
+fi
+echo "Pantalla: $(adb shell wm size | tr -d '\r' | tr '\n' ' ')"
 
 shot() {
   sleep "${2:-2}"
@@ -70,10 +74,7 @@ PY
 adb logcat -c
 adb shell screenrecord --time-limit 150 --bit-rate 2500000 /sdcard/demo.mp4 &
 adb shell am start -W -a android.intent.action.VIEW -d "$URL" -p "$PKG"
-sleep 3
-landscape
-echo "Tras abrir la app: $(adb shell dumpsys input | grep -m1 -o 'SurfaceOrientation: [0-9]')"
-shot 01_abriendo_video 27
+shot 01_abriendo_video 30
 # If the link did not reach the player, open the app from its launcher entry and retry the link.
 if ! adb shell dumpsys window | grep -m1 mCurrentFocus | grep -q "$PKG"; then
   echo "La app no está en primer plano; se abre con monkey y se reintenta el enlace"

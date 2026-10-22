@@ -338,7 +338,8 @@ public final class QuestHud {
     private int batteryPercent() {
         try {
             Intent i = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
-            if (i == null) return -1;
+            // TVs and other mains-powered devices report no battery: show nothing instead of "0%".
+            if (i == null || !i.getBooleanExtra(BatteryManager.EXTRA_PRESENT, true)) return -1;
             int level = i.getIntExtra(BatteryManager.EXTRA_LEVEL, -1), scale = i.getIntExtra(BatteryManager.EXTRA_SCALE, 100);
             return level < 0 || scale <= 0 ? -1 : Math.round(level * 100f / scale);
         } catch (RuntimeException e) {
