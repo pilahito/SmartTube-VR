@@ -1,6 +1,11 @@
 name: SmartTube VR - Quest APK (patched original SmartTube)
 on:
   workflow_dispatch:
+    inputs:
+      preview_video:
+        description: 'Run the APK in an emulator and record the VR interface with this video (empty = skip)'
+        required: false
+        default: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ'
   push:
     branches: [main]
 permissions:
@@ -257,3 +262,59 @@ jobs:
               --latest "$OUT"/*
           fi
           echo "Release publicada: $TAG ($NAME)" >> "$GITHUB_STEP_SUMMARY"
+
+  # Manual runs only: install the universal APK in an emulator, open a video and record the VR interface
+  # (screenshots + video), so it can be compared with docs/interfaz/*.jpg. Never runs for releases.
+  ui-preview:
+    needs: build-from-original
+    if: github.event_name == 'workflow_dispatch' && inputs.preview_video != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout SmartTube VR tools
+        uses: actions/checkout@v4
+        with:
+          path: enhancements
+      - name: Download the universal APK built above
+        uses: actions/download-artifact@v4
+        with:
+          name: SmartTube-VR-universal-debug
+          path: apk
+      - name: Enable KVM for the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run the app in an emulator, take screenshots and record a video
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          arch: x86_64
+          target: google_apis
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -change-locale es-ES
+          disable-animations: true
+          script: bash enhancements/tools/ui_preview.sh apk "${{ inputs.preview_video }}" preview
+      - name: Upload screenshots and video
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartTube-VR-ui-preview
+          path: preview
+          if-no-files-found: warn
+      - name: Publish them to the ui-preview branch (easy to browse on GitHub)
+        if: always()
+        shell: bash
+        env:
+          TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [ -d preview ] || exit 0
+          cd preview
+          git init -q
+          git checkout -q -b ui-preview
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Vista previa de la interfaz VR (run ${GITHUB_RUN_NUMBER}, ${GITHUB_SHA::7})"
+          git push -q -f "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ui-preview
