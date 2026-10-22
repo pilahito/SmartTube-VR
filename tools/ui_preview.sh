@@ -27,10 +27,14 @@ echo "Idioma: $(adb shell getprop persist.sys.locale | tr -d '\r')"
 adb install -r -g "$APK" || { echo "install failed"; exit 1; }
 
 # Landscape 1280x720 dp, like the Quest 2D panel.
-adb shell settings put system accelerometer_rotation 0
-adb shell settings put system user_rotation 1
-adb shell wm size 1920x1080
+landscape() {
+  adb shell settings put system accelerometer_rotation 0
+  adb shell settings put system user_rotation 1
+  adb shell cmd window user-rotation lock 1 >/dev/null 2>&1 || adb shell wm user-rotation lock 1 >/dev/null 2>&1 || true
+}
 adb shell wm density 240
+landscape
+echo "Pantalla: $(adb shell wm size | tr -d '\r' | tr '\n' ' ') rotación: $(adb shell dumpsys input | grep -m1 -o 'SurfaceOrientation: [0-9]' )"
 
 shot() {
   sleep "${2:-2}"
@@ -67,7 +71,10 @@ PY
 adb logcat -c
 adb shell screenrecord --time-limit 150 --bit-rate 2500000 /sdcard/demo.mp4 &
 adb shell am start -W -a android.intent.action.VIEW -d "$URL" -p "$PKG"
-shot 01_abriendo_video 30
+sleep 3
+landscape
+echo "Tras abrir la app: $(adb shell dumpsys input | grep -m1 -o 'SurfaceOrientation: [0-9]')"
+shot 01_abriendo_video 27
 # If the link did not reach the player, open the app from its launcher entry and retry the link.
 if ! adb shell dumpsys window | grep -m1 mCurrentFocus | grep -q "$PKG"; then
   echo "La app no está en primer plano; se abre con monkey y se reintenta el enlace"

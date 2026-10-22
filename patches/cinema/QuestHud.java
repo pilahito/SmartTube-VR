@@ -62,6 +62,12 @@ public final class QuestHud {
         if (active != null) active.host.syncVisibility();
     }
 
+    /** True while a HUD is attached to the player (the cinema controller then hides its old opener button). */
+    static boolean isActive() { return active != null; }
+
+    /** Tag of the cinema controller's "Escenarios" button, replaced by the pill's menu button. */
+    static final String OPENER_TAG = "quest_cinema_opener";
+
     /** Repaints the HUD with the colors of the current scenery theme. */
     static void refreshTheme() { if (active != null) active.restyle(); }
 
@@ -74,6 +80,7 @@ public final class QuestHud {
     private final View.OnLayoutChangeListener layoutListener;
     private final LinearLayout pill, bar;
     private final TextView device, wifiText, batteryText, time, quality, deArrow, likes, dislikes, rydNote, legend;
+    private final View sepDevice, sepWifi, legendDot;
     private final QuestUi.Icon wifiIcon, batteryIcon, playIcon;
     private final SegmentBar seek;
     private boolean shown, released;
@@ -101,12 +108,14 @@ public final class QuestHud {
         pill.setBackground(QuestUi.box(context, QuestUi.GLASS, 28, 1.5f, QuestUi.border));
         device = text("", 16, Color.WHITE);
         pill.addView(device);
-        pill.addView(separator());
+        sepDevice = separator();
+        pill.addView(sepDevice);
         wifiIcon = new QuestUi.Icon(context, "wifi", Color.WHITE);
         pill.addView(wifiIcon, new LinearLayout.LayoutParams(dp(26), dp(26)));
         wifiText = text("", 16, Color.WHITE);
         pill.addView(wifiText);
-        pill.addView(separator());
+        sepWifi = separator();
+        pill.addView(sepWifi);
         batteryIcon = new QuestUi.Icon(context, "battery", Color.WHITE);
         pill.addView(batteryIcon, new LinearLayout.LayoutParams(dp(30), dp(26)));
         batteryText = text("", 16, Color.WHITE);
@@ -171,9 +180,9 @@ public final class QuestHud {
 
         LinearLayout row3 = new LinearLayout(context);
         row3.setGravity(Gravity.CENTER_VERTICAL);
-        View dot = new View(context);
-        dot.setBackground(QuestUi.box(context, 0xff7ac043, 6, 0, 0));
-        row3.addView(dot, new LinearLayout.LayoutParams(dp(12), dp(12)));
+        legendDot = new View(context);
+        legendDot.setBackground(QuestUi.box(context, 0xff7ac043, 6, 0, 0));
+        row3.addView(legendDot, new LinearLayout.LayoutParams(dp(12), dp(12)));
         legend = text(spanish ? "Segmentos de SponsorBlock" : "SponsorBlock segments", 13, Color.WHITE);
         legend.setPadding(dp(8), 0, 0, 0);
         row3.addView(legend);
@@ -190,6 +199,10 @@ public final class QuestHud {
         root.addOnLayoutChangeListener(layoutListener);
         pill.setVisibility(View.GONE);
         bar.setVisibility(View.GONE);
+        setSegments(null);
+        // The pill's menu button replaces the cinema controller's "Escenarios" button.
+        View opener = root.findViewWithTag(OPENER_TAG);
+        if (opener != null) opener.setVisibility(View.GONE);
         refreshStatus();
     }
 
@@ -256,7 +269,9 @@ public final class QuestHud {
     /** SponsorBlock segments as {startFraction, endFraction, ARGB color}. */
     public void setSegments(List<float[]> segments) {
         seek.segments = segments == null ? new ArrayList<float[]>() : new ArrayList<>(segments);
-        legend.setVisibility(seek.segments.isEmpty() ? View.INVISIBLE : View.VISIBLE);
+        int legendVisibility = seek.segments.isEmpty() ? View.INVISIBLE : View.VISIBLE;
+        legend.setVisibility(legendVisibility);
+        legendDot.setVisibility(legendVisibility);
         seek.invalidate();
     }
 
@@ -315,6 +330,9 @@ public final class QuestHud {
             wifiIcon.setLevel(bars * 25);
             wifiText.setText(wifiLabel(bars));
         }
+        // Separators only between items that are actually shown.
+        sepDevice.setVisibility(bars >= 0 || level >= 0 ? View.VISIBLE : View.GONE);
+        sepWifi.setVisibility(bars >= 0 && level >= 0 ? View.VISIBLE : View.GONE);
     }
 
     private int batteryPercent() {

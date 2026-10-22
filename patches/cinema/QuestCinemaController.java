@@ -64,6 +64,7 @@ public final class QuestCinemaController {
         root.addView(scenery,0,new FrameLayout.LayoutParams(-1,-1));
         opener=button(t("Escenarios","Scenery"),this::showMenu);
         opener.setTextSize(14);
+        opener.setTag(QuestHud.OPENER_TAG);
         opener.setContentDescription(t("Abrir escenarios y controles de cine","Open scenery and cinema controls"));
         FrameLayout.LayoutParams op=new FrameLayout.LayoutParams(dp(146),dp(48),Gravity.TOP|Gravity.START);
         op.setMargins(dp(16),dp(14),dp(16),0);
@@ -213,6 +214,6 @@ public final class QuestCinemaController {
         else scenery.setScreenFrame(null,false,distance);
         int p=Math.round(originalPadding*factor);subtitles.setPadding(p,subtitles.getPaddingTop(),p,subtitles.getPaddingBottom());
     }
-    public void setPip(boolean pip){this.pip=pip;if(pip)dismiss();opener.setVisibility(pip?View.GONE:View.VISIBLE);apply();}
+    public void setPip(boolean pip){this.pip=pip;if(pip)dismiss();opener.setVisibility(pip||QuestHud.isActive()?View.GONE:View.VISIBLE);apply();}
     public void release(){dismiss();root.removeOnLayoutChangeListener(layoutListener);root.removeView(opener);root.removeView(scenery);}
 }
