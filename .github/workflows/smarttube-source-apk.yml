@@ -290,10 +290,12 @@ jobs:
       - name: Run the app in an emulator, take screenshots and record a video
         uses: reactivecircus/android-emulator-runner@v2
         with:
+          # Android TV: landscape 1920x1080 by design, like SmartTube's Leanback UI and the Quest 2D panel.
           api-level: 30
-          arch: x86_64
-          target: google_apis
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -skin 1920x1080 -change-locale es-ES
+          arch: x86
+          target: android-tv
+          profile: tv_1080p
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -change-locale es-ES
           disable-animations: true
           script: bash enhancements/tools/ui_preview.sh apk "${{ inputs.preview_video }}" preview
       - name: Upload screenshots and video

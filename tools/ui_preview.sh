@@ -32,7 +32,6 @@ landscape() {
   adb shell settings put system user_rotation 1
   adb shell cmd window user-rotation lock 1 >/dev/null 2>&1 || adb shell wm user-rotation lock 1 >/dev/null 2>&1 || true
 }
-adb shell wm density 240
 landscape
 echo "Pantalla: $(adb shell wm size | tr -d '\r' | tr '\n' ' ') rotación: $(adb shell dumpsys input | grep -m1 -o 'SurfaceOrientation: [0-9]' )"
 
