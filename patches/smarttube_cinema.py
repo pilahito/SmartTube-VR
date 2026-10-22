@@ -61,7 +61,7 @@ def main(root):
     sources = sorted((Path(__file__).parent / 'cinema').glob('*.java'))
     names = {source.name for source in sources}
     required = {'CinemaGeometry.java', 'CinemaSceneView.java', 'QuestCinemaController.java', 'VirtualScreen.java',
-                'QuestUi.java', 'QuestPanels.java'}
+                'QuestUi.java', 'QuestPanels.java', 'QuestHud.java', 'QuestTheme.java'}
     if not required <= names:
         raise SystemExit(f'Missing cinema Java sources: {sorted(required - names)}')
     for source in sources:

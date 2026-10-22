@@ -21,8 +21,10 @@ import android.widget.TextView;
  * Only android.* is used so the classes compile on their own against android.jar.
  */
 final class QuestUi {
-    static final int ACCENT = 0xff1a80ff, GLASS = 0xe6121214, BORDER = 0x29ffffff, TRACK = 0x33ffffff;
+    static final int GLASS = 0xe6121214, TRACK = 0x33ffffff;
     static final int MUTED = 0x99ffffff, FILL = 0x12ffffff, FILL_HOVER = 0x2bffffff;
+    // Theme colors: change with the scenery (see QuestTheme). Panels read them when they are built.
+    static int accent = 0xff1a80ff, border = 0x29ffffff, progress = 0xffe03333;
 
     interface IntListener { void on(int value); }
 
@@ -43,7 +45,7 @@ final class QuestUi {
         LinearLayout p = new LinearLayout(c);
         p.setOrientation(LinearLayout.VERTICAL);
         p.setPadding(dp(c, 22), dp(c, 18), dp(c, 22), dp(c, 18));
-        p.setBackground(box(c, GLASS, 24, 1.5f, BORDER));
+        p.setBackground(box(c, GLASS, 24, 1.5f, border));
         return p;
     }
 
@@ -63,14 +65,14 @@ final class QuestUi {
     }
 
     /** Pressed / focused / normal background for clickable rows, chips and buttons. */
-    static Drawable stateBg(Context c, int normal, int focused, float radiusDp, boolean border) {
+    static Drawable stateBg(Context c, int normal, int focused, float radiusDp, boolean outline) {
         StateListDrawable s = new StateListDrawable();
-        float stroke = border ? 1 : 0;
-        s.addState(new int[]{android.R.attr.state_pressed}, box(c, ACCENT, radiusDp, 0, 0));
-        s.addState(new int[]{android.R.attr.state_selected}, box(c, ACCENT, radiusDp, 0, 0));
-        s.addState(new int[]{android.R.attr.state_focused}, box(c, focused, radiusDp, 2, ACCENT));
-        s.addState(new int[]{android.R.attr.state_hovered}, box(c, focused, radiusDp, stroke, BORDER));
-        s.addState(new int[]{}, box(c, normal, radiusDp, stroke, BORDER));
+        float stroke = outline ? 1 : 0;
+        s.addState(new int[]{android.R.attr.state_pressed}, box(c, accent, radiusDp, 0, 0));
+        s.addState(new int[]{android.R.attr.state_selected}, box(c, accent, radiusDp, 0, 0));
+        s.addState(new int[]{android.R.attr.state_focused}, box(c, focused, radiusDp, 2, accent));
+        s.addState(new int[]{android.R.attr.state_hovered}, box(c, focused, radiusDp, stroke, border));
+        s.addState(new int[]{}, box(c, normal, radiusDp, stroke, border));
         return s;
     }
 
@@ -118,9 +120,15 @@ final class QuestUi {
 
     /** Icons drawn with Canvas (no image assets), same shapes as the Godot panels. */
     static final class Icon extends View {
-        private final String kind;
+        private String kind;
         private final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG), fill = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Path path = new Path();
+        private int level = 100;
+
+        void setKind(String kind) { if (!kind.equals(this.kind)) { this.kind = kind; invalidate(); } }
+
+        /** Battery fill (0-100) or Wi-Fi bars (0-100 mapped to 0-4). */
+        void setLevel(int level) { this.level = Math.max(0, Math.min(100, level)); invalidate(); }
 
         Icon(Context c, String kind, int color) {
             super(c);
@@ -202,6 +210,64 @@ final class QuestUi {
                     g.drawLine(cx - s * .3f, cy - s * .1f, cx + s * .2f, cy + s * .3f, stroke);
                     g.drawLine(cx + s * .2f, cy + s * .3f, cx + s * .6f, cy, stroke);
                     break;
+                case "menu":
+                    for (int i = -1; i <= 1; i++) g.drawLine(cx - s, cy + i * s * .7f, cx + s, cy + i * s * .7f, stroke);
+                    break;
+                case "play":
+                    path.reset(); path.moveTo(cx - s * .7f, cy - s); path.lineTo(cx - s * .7f, cy + s); path.lineTo(cx + s, cy); path.close();
+                    g.drawPath(path, fill);
+                    break;
+                case "pause":
+                    g.drawRect(cx - s * .8f, cy - s, cx - s * .25f, cy + s, fill);
+                    g.drawRect(cx + s * .25f, cy - s, cx + s * .8f, cy + s, fill);
+                    break;
+                case "next":
+                    path.reset(); path.moveTo(cx - s * .9f, cy - s); path.lineTo(cx - s * .9f, cy + s); path.lineTo(cx + s * .5f, cy); path.close();
+                    g.drawPath(path, fill);
+                    g.drawRect(cx + s * .65f, cy - s, cx + s * .95f, cy + s, fill);
+                    break;
+                case "thumb_up": case "thumb_down": {
+                    float f = kind.equals("thumb_up") ? 1f : -1f;
+                    g.drawRect(cx - s, cy - f * s * .1f - (f > 0 ? 0 : s * .8f), cx - s * .45f, cy + f * s * .9f - (f > 0 ? 0 : s * .8f), fill);
+                    path.reset();
+                    path.moveTo(cx - s * .3f, cy - f * s * .05f); path.lineTo(cx + s * .1f, cy - f * s); path.lineTo(cx + s * .55f, cy - f * s * .8f);
+                    path.lineTo(cx + s * .35f, cy - f * s * .1f); path.lineTo(cx + s * 1.05f, cy - f * s * .1f); path.lineTo(cx + s * .85f, cy + f * s * .85f);
+                    path.lineTo(cx - s * .3f, cy + f * s * .85f); path.close();
+                    g.drawPath(path, fill);
+                    break;
+                }
+                case "gear":
+                    g.drawCircle(cx, cy, s * .7f, stroke);
+                    for (int i = 0; i < 8; i++) {
+                        double a = Math.PI * 2 * i / 8;
+                        g.drawLine(cx + (float) Math.cos(a) * s * .85f, cy + (float) Math.sin(a) * s * .85f,
+                                cx + (float) Math.cos(a) * s * 1.2f, cy + (float) Math.sin(a) * s * 1.2f, stroke);
+                    }
+                    break;
+                case "expand":
+                    for (int sx = -1; sx <= 1; sx += 2) for (int sy = -1; sy <= 1; sy += 2) {
+                        float x = cx + sx * s, y = cy + sy * s;
+                        g.drawLine(x, y, x - sx * s * .6f, y, stroke);
+                        g.drawLine(x, y, x, y - sy * s * .6f, stroke);
+                    }
+                    break;
+                case "wifi": {
+                    int bars = Math.round(level / 25f);
+                    for (int i = 1; i <= 3; i++) {
+                        stroke.setAlpha(i <= bars ? 255 : 90);
+                        float r = s * (.55f * i + .1f);
+                        g.drawArc(cx - r, cy + s * .7f - r, cx + r, cy + s * .7f + r, -135, 90, false, stroke);
+                    }
+                    stroke.setAlpha(255);
+                    g.drawCircle(cx, cy + s * .7f, s * .12f, fill);
+                    break;
+                }
+                case "battery": {
+                    g.drawRect(cx - s * 1.2f, cy - s * .6f, cx + s * 1.0f, cy + s * .6f, stroke);
+                    g.drawRect(cx + s * 1.0f, cy - s * .25f, cx + s * 1.25f, cy + s * .25f, fill);
+                    g.drawRect(cx - s * 1.05f, cy - s * .45f, cx - s * 1.05f + (s * 1.9f) * level / 100f, cy + s * .45f, fill);
+                    break;
+                }
                 default:
                     break;
             }

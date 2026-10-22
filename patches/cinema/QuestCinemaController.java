@@ -114,7 +114,7 @@ public final class QuestCinemaController {
     public void showMenu() {
         if(pip || (dialog!=null && dialog.isShowing())) return;
         String subtitle=scenes()[scene]+" • "+VirtualScreen.modeNames(spanish)[format];
-        showPanel(QuestPanels.options(context,spanish,subtitle,brightness,eco,enabled,new QuestPanels.OptionsActions(){
+        showPanel(QuestPanels.options(context,spanish,subtitle,brightness,eco,enabled,QuestHud.isClassic(context),new QuestPanels.OptionsActions(){
             public void scenes(){chooseScene();}
             public void screen(){screenMenu();}
             public void brightness(){choices(t("Brillo del escenario","Scenery brightness"),new String[]{"25%","50%","75%","100%"},new int[]{25,50,75,100},brightness,v->{brightness=v;apply();});}
@@ -124,6 +124,7 @@ public final class QuestCinemaController {
             public void saveFavorite(){prefs.edit().putInt("favorite",scene).apply();toast(t("Favorito guardado","Favorite saved"));}
             public void openFavorite(){int favorite=prefs.getInt("favorite",-1);if(favorite>=0 && favorite<CinemaGeometry.COUNT){scene=favorite;enabled=true;apply();dismiss();}else toast(t("Primero guarda un escenario","Save a scenery first"));}
             public void toggleScenery(){enabled=!enabled;apply();dismiss();}
+            public void toggleClassic(){QuestHud.setClassic(context,!QuestHud.isClassic(context));refreshMenu();}
             public void close(){dismiss();}
         }),Gravity.TOP|Gravity.END,460,0);
     }
@@ -188,7 +189,10 @@ public final class QuestCinemaController {
     private void refreshMenu(){dismiss();showMenu();}
     private void toast(String s){Toast.makeText(context,s,Toast.LENGTH_LONG).show();}
     private void dismiss(){if(dialog!=null){dialog.dismiss();dialog=null;}}
+    /** Fullscreen button of the HUD: hide or show the scenery around the video. */
+    public void toggleScenery(){enabled=!enabled;apply();}
     private void apply() {
+        QuestTheme.apply(scene);QuestHud.refreshTheme();
         prefs.edit().putInt("scene",scene).putInt("size",size).putInt("distance",distance).putInt("brightness",brightness).putInt("format",format).putBoolean("curved",curved)
                 .putInt("curvature",curvature).putBoolean("eco",eco).putBoolean("enabled",enabled).apply();
         scenery.configure(scene,eco,brightness); scenery.setVisibility(enabled&&!pip?View.VISIBLE:View.GONE);

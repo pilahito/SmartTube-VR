@@ -27,10 +27,10 @@ final class QuestPanels {
 
     interface OptionsActions {
         void scenes(); void screen(); void brightness(); void toggleEco(); void sponsor(); void dearrow();
-        void saveFavorite(); void openFavorite(); void toggleScenery(); void close();
+        void saveFavorite(); void openFavorite(); void toggleScenery(); void toggleClassic(); void close();
     }
 
-    static View options(Context c, boolean es, String subtitle, int brightness, boolean eco, boolean sceneryOn, OptionsActions a) {
+    static View options(Context c, boolean es, String subtitle, int brightness, boolean eco, boolean sceneryOn, boolean classic, OptionsActions a) {
         LinearLayout panel = QuestUi.glassPanel(c);
         LinearLayout head = new LinearLayout(c);
         head.setGravity(Gravity.CENTER_VERTICAL);
@@ -57,6 +57,7 @@ final class QuestPanels {
         row(c, panel, "frame", es ? "DeArrow: títulos y miniaturas" : "DeArrow: titles and thumbnails", null, a::dearrow, true);
         row(c, panel, "star", es ? "Guardar escenario favorito" : "Save favorite scenery", null, a::saveFavorite, true);
         row(c, panel, "star", es ? "Abrir favorito" : "Open favorite", null, a::openFavorite, true);
+        row(c, panel, "gear", es ? "Controles de SmartTube" : "SmartTube controls", classic ? (es ? "clásicos" : "classic") : "VR", a::toggleClassic, true);
         row(c, panel, "monitor", sceneryOn ? (es ? "Pantalla completa sin escenario" : "Fullscreen without scenery")
                 : (es ? "Activar escenario" : "Enable scenery"), null, a::toggleScenery, false);
         ScrollView scroll = new ScrollView(c);
@@ -168,10 +169,10 @@ final class QuestPanels {
 
         private static android.graphics.drawable.Drawable borderStates(Context c) {
             android.graphics.drawable.StateListDrawable s = new android.graphics.drawable.StateListDrawable();
-            s.addState(new int[]{android.R.attr.state_selected}, QuestUi.box(c, Color.TRANSPARENT, 8, 3, QuestUi.ACCENT));
-            s.addState(new int[]{android.R.attr.state_focused}, QuestUi.box(c, Color.TRANSPARENT, 8, 3, QuestUi.ACCENT));
-            s.addState(new int[]{android.R.attr.state_hovered}, QuestUi.box(c, Color.TRANSPARENT, 8, 3, QuestUi.ACCENT));
-            s.addState(new int[]{}, QuestUi.box(c, Color.TRANSPARENT, 8, 1, QuestUi.BORDER));
+            s.addState(new int[]{android.R.attr.state_selected}, QuestUi.box(c, Color.TRANSPARENT, 8, 3, QuestUi.accent));
+            s.addState(new int[]{android.R.attr.state_focused}, QuestUi.box(c, Color.TRANSPARENT, 8, 3, QuestUi.accent));
+            s.addState(new int[]{android.R.attr.state_hovered}, QuestUi.box(c, Color.TRANSPARENT, 8, 3, QuestUi.accent));
+            s.addState(new int[]{}, QuestUi.box(c, Color.TRANSPARENT, 8, 1, QuestUi.border));
             return s;
         }
 
@@ -281,7 +282,7 @@ final class QuestPanels {
             line.addView(QuestUi.label(c, name, 17, Color.WHITE), new LinearLayout.LayoutParams(0, -2, 1f));
             line.addView(value);
             parent.addView(line, new LinearLayout.LayoutParams(-1, -2));
-            SeekBar bar = QuestUi.slider(c, max, progress, QuestUi.ACCENT, 5, 20, l);
+            SeekBar bar = QuestUi.slider(c, max, progress, QuestUi.accent, 5, 20, l);
             parent.addView(bar, new LinearLayout.LayoutParams(-1, QuestUi.dp(c, 30)));
             return bar;
         }
