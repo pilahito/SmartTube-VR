@@ -57,8 +57,9 @@ try:
     root = ET.parse(path).getroot()
 except Exception:
     sys.exit(0)
+wanted = value.split('|')
 for n in root.iter('node'):
-    if n.get(attr, '') == value:
+    if n.get(attr, '') in wanted:
         x1, y1, x2, y2 = map(int, re.findall(r'\d+', n.get('bounds')))
         print((x1 + x2) // 2, (y1 + y2) // 2)
         break
@@ -87,16 +88,16 @@ adb shell input keyevent KEYCODE_DPAD_CENTER
 shot 02_hud_barra_y_pildora 3
 adb shell input keyevent KEYCODE_MENU
 shot 03_reproductor_vr 3
-tap_node text "Escenarios" && shot 04_escenarios 3
+tap_node text "Escenarios|Scenery" && shot 04_escenarios 3
 tap_node text "Cyberpunk" && shot 05_cyberpunk_elegido 3
 adb shell input keyevent KEYCODE_BACK; sleep 2
 adb shell input keyevent KEYCODE_DPAD_CENTER
 shot 06_hud_tema_cyberpunk 3
 adb shell input keyevent KEYCODE_MENU; sleep 2
-tap_node text "Pantalla virtual" && shot 07_pantalla_virtual 3
+tap_node text "Pantalla virtual|Virtual screen" && shot 07_pantalla_virtual 3
 adb shell input keyevent KEYCODE_BACK; sleep 2
 adb shell input keyevent KEYCODE_MENU; sleep 2
-tap_node text "Escenarios" && sleep 2 && tap_node text "Playa tropical"; sleep 2
+tap_node text "Escenarios|Scenery" && sleep 2 && tap_node text "Playa tropical|Tropical beach"; sleep 2
 adb shell input keyevent KEYCODE_BACK; sleep 2
 adb shell input keyevent KEYCODE_DPAD_CENTER
 shot 08_hud_tema_oceano 3
