@@ -281,10 +281,13 @@ final class QuestUi {
                     break;
                 }
                 case "visor": {
-                    // VR headset seen from the front, inside a circle (like "Ajustes de video").
-                    g.drawCircle(cx, cy, s * 1.15f, stroke);
-                    RectF r = new RectF(cx - s * .8f, cy - s * .35f, cx + s * .8f, cy + s * .4f);
-                    g.drawRoundRect(r, s * .3f, s * .3f, fill);
+                    // VR headset seen from the front: rounded body, two lenses and the nose cut-out.
+                    RectF body = new RectF(cx - s * 1.15f, cy - s * .6f, cx + s * 1.15f, cy + s * .6f);
+                    g.drawRoundRect(body, s * .45f, s * .45f, stroke);
+                    g.drawCircle(cx - s * .5f, cy, s * .28f, fill);
+                    g.drawCircle(cx + s * .5f, cy, s * .28f, fill);
+                    g.drawLine(cx - s * .2f, cy + s * .6f, cx, cy + s * .3f, stroke);
+                    g.drawLine(cx, cy + s * .3f, cx + s * .2f, cy + s * .6f, stroke);
                     break;
                 }
                 case "subtitles": {

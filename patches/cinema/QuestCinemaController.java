@@ -53,7 +53,7 @@ public final class QuestCinemaController {
         spanish=Locale.getDefault().getLanguage().equals("es");
         prefs=context.getSharedPreferences("quest_cinema_v1",Context.MODE_PRIVATE);
         scene=Math.max(0,Math.min(CinemaGeometry.COUNT-1,prefs.getInt("scene",0)));
-        size=VirtualScreen.clampSize(prefs.getInt("size",72));
+        size=Math.round(VirtualScreen.clampSize(prefs.getInt("size",70))/5f)*5; // slider moves in 5 % steps
         brightness=Math.max(15,Math.min(100,prefs.getInt("brightness",75)));
         distance=VirtualScreen.clampDistance(prefs.getInt("distance",3));
         format=VirtualScreen.clampMode(prefs.getInt("format",VirtualScreen.FIT));
@@ -109,7 +109,14 @@ public final class QuestCinemaController {
         w.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         w.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND); w.setGravity(gravity);
         int width=Math.min(dp(widthDp),Math.max(dp(280),root.getWidth()-dp(40)));
-        int height=heightDp<=0?ViewGroup.LayoutParams.WRAP_CONTENT:Math.min(dp(heightDp),Math.max(dp(200),root.getHeight()-dp(40)));
+        // Never taller than the player: long panels (Más opciones, Pantalla virtual) scroll instead of overflowing.
+        int maxHeight=Math.max(dp(200),root.getHeight()-dp(48));
+        int height;
+        if(heightDp>0) height=Math.min(dp(heightDp),maxHeight);
+        else {
+            content.measure(View.MeasureSpec.makeMeasureSpec(width,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(0,View.MeasureSpec.UNSPECIFIED));
+            height=content.getMeasuredHeight()>maxHeight?maxHeight:ViewGroup.LayoutParams.WRAP_CONTENT;
+        }
         w.setLayout(width,height);
         WindowManager.LayoutParams lp=w.getAttributes(); lp.x=dp(24); lp.y=dp(24); w.setAttributes(lp);
     }

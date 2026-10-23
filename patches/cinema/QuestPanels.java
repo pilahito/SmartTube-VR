@@ -309,7 +309,10 @@ final class QuestPanels {
             return bar;
         }
 
-        private void setCurved(boolean on) { curvedBtn.setSelected(on); flatBtn.setSelected(!on); curvature.setEnabled(on); }
+        private void setCurved(boolean on) {
+            curvedBtn.setSelected(on); flatBtn.setSelected(!on);
+            curvature.setEnabled(on); curvature.setAlpha(on ? 1f : .35f); // a flat screen has no curvature
+        }
 
         private void setFormat(int mode) { for (int i = 0; i < formatChips.length; i++) if (formatChips[i] != null) formatChips[i].setSelected(i == mode); }
 
