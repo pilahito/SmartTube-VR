@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Quest 3 media tweaks over upstream yuliskov/SmartTube (ffa16426).
+"""Quest 3 media tweaks over upstream yuliskov/SmartTube (probado en 1d4d9b27, 32.71).
 
 Only adds what upstream lacks (see README):
 * SponsorBlock: "Undo" button for ~5 s after an automatic skip, and the

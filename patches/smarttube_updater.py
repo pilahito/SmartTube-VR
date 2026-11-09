@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Point SmartTube's built-in updater at pilahito/SmartTube-VR releases.
 
-Upstream (yuliskov/SmartTube ffa16426) reads R.array.update_urls (common module)
+Upstream (yuliskov/SmartTube, probado en 1d4d9b27 (32.71)) reads R.array.update_urls (common module)
 and feeds it to appupdatechecker2, which downloads a JSON manifest, compares the
 highest "versionCode" with the installed one, downloads
 package.downloadUrlList_<primary ABI> and installs it (REQUEST_INSTALL_PACKAGES

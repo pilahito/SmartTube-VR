@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: yuliskov/SmartTube
-          ref: ffa16426ea3c7c82077e0f00228818b85f373588
+          ref: 1d4d9b27a6fd24c2cdb3f03fb6dd2278961111f3  # bump 32.71 (estable 32.71s)
           submodules: recursive
           path: smarttube
           persist-credentials: false
